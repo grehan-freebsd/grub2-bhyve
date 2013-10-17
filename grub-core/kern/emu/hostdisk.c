@@ -952,6 +952,10 @@ open_device (const grub_disk_t disk, grub_disk_addr_t sector, int flags,
       grub_error (GRUB_ERR_BAD_DEVICE, "cannot get current flags of sysctl kern.geom.debugflags");
       return -1;
     }
+#ifdef BHYVE
+  /* Avoid issuing the unnecessary sysctl */
+  sysctl_oldflags |= 0x10;
+#endif
   sysctl_flags = sysctl_oldflags | 0x10;
   if (! (sysctl_oldflags & 0x10)
       && sysctlbyname ("kern.geom.debugflags", NULL , 0, &sysctl_flags, sysctl_size))

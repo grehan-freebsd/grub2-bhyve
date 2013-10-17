@@ -75,6 +75,9 @@
  * NOTE: System headers on GNU/Linux may #define this macro already,
  * so if you want to change it, it you need to #undef it first.
  */
+#ifdef __always_inline
+#undef __always_inline
+#endif
 #ifndef __always_inline
 #	ifdef __GNUC__
 #		define __always_inline \

@@ -31,6 +31,10 @@
 # undef _GL_SYSTEM_GETOPT
 #endif
 
+#ifndef __GETOPT_PREFIX
+#define __GETOPT_PREFIX rpl_
+#endif
+
 #ifndef _GL_GETOPT_H
 
 #ifndef __need_getopt

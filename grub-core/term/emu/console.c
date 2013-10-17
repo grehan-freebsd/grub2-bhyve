@@ -229,6 +229,7 @@ grub_ncurses_init (struct grub_term_output *term __attribute__ ((unused)))
   intrflush (stdscr, FALSE);
   keypad (stdscr, TRUE);
 
+#ifndef BHYVE
   if (has_colors ())
     {
       start_color ();
@@ -245,6 +246,9 @@ grub_ncurses_init (struct grub_term_output *term __attribute__ ((unused)))
           use_color = 1;
         }
     }
+#else
+  (void) color_map;
+#endif
 
   return 0;
 }

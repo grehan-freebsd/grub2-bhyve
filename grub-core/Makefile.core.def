@@ -65,7 +65,7 @@ kernel = {
   mips_loongson_cppflags = '-DUSE_ASCII_FAILBACK';
   i386_qemu_cppflags     = '-DGRUB_BOOT_MACHINE_LINK_ADDR=$(GRUB_BOOT_MACHINE_LINK_ADDR)';
   emu_cflags = '$(CFLAGS_GNULIB)';
-  emu_cppflags = '$(CPPFLAGS_GNULIB)';
+  emu_cppflags = '-DBHYVE $(CPPFLAGS_GNULIB)';
 
   i386_pc_startup = kern/i386/pc/startup.S;
   i386_efi_startup = kern/i386/efi/startup.S;
@@ -215,6 +215,7 @@ kernel = {
   emu = kern/emu/mm.c;
   emu = kern/emu/time.c;
   emu = kern/emu/cache.c;
+  emu = kern/emu/bhyve_hostif.c;
   emu = term/emu/console.c;
 
   videoinkernel = term/gfxterm.c;
@@ -247,7 +248,7 @@ program = {
 
   ldadd = 'kernel.img$(EXEEXT)';
   ldadd = '$(MODULE_FILES)';
-  ldadd = '$(LIBUTIL) $(LIBCURSES) $(LIBSDL) $(LIBUSB) $(LIBPCIACCESS) $(LIBDEVMAPPER) $(LIBZFS) $(LIBNVPAIR) $(LIBGEOM)';
+  ldadd = '$(LIBUTIL) $(LIBCURSES) $(LIBSDL) $(LIBUSB) $(LIBPCIACCESS) $(LIBDEVMAPPER) $(LIBZFS) $(LIBNVPAIR) $(LIBGEOM) -lvmmapi gnulib/libgnu.a -lintl';
 
   enable = emu;
 };
@@ -259,7 +260,7 @@ program = {
   emu_nodist = symlist.c;
 
   ldadd = 'kernel.img$(EXEEXT)';
-  ldadd = '$(LIBUTIL) $(LIBCURSES) $(LIBSDL) $(LIBUSB) $(LIBPCIACCESS) $(LIBDEVMAPPER) $(LIBZFS) $(LIBNVPAIR) $(LIBGEOM)';
+  ldadd = '$(LIBUTIL) $(LIBCURSES) $(LIBSDL) $(LIBUSB) $(LIBPCIACCESS) $(LIBDEVMAPPER) $(LIBZFS) $(LIBNVPAIR) $(LIBGEOM) -lvmmapi gnulib/libgnu.a -lintl';
 
   enable = emu;
 };
@@ -1328,7 +1329,12 @@ module = {
   extra_dist = loader/i386/bsdXX.c;
   extra_dist = loader/i386/bsd_pagetable.c;
 
+  emu = loader/i386/bsd.c;
+  emu = loader/i386/bsd32.c;
+  emu = loader/i386/bsd64.c;
+
   enable = x86;
+  enable = emu;
 };
 
 module = {
@@ -1389,8 +1395,8 @@ module = {
   powerpc_ieee1275 = loader/powerpc/ieee1275/linux.c;
   sparc64_ieee1275 = loader/sparc64/ieee1275/linux.c;
   ia64_efi = loader/ia64/efi/linux.c;
+  emu = loader/i386/linux.c;
   common = lib/cmdline.c;
-  enable = noemu;
 };
 
 module = {
@@ -1840,3 +1846,8 @@ module = {
   enable = i386;
 };
 
+module = {
+  name = bhyve_relocator;
+  emu = kern/emu/bhyve.c;
+  enable = emu;
+};

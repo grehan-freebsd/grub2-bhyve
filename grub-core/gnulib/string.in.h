@@ -142,12 +142,12 @@ _GL_WARN_ON_USE (memmem, "memmem is unportable and often quadratic - "
 #if @GNULIB_MEMPCPY@
 # if ! @HAVE_MEMPCPY@
 _GL_FUNCDECL_SYS (mempcpy, void *,
-                  (void *restrict __dest, void const *restrict __src,
+                  (void *__restrict __dest, void const *__restrict __src,
                    size_t __n)
                   _GL_ARG_NONNULL ((1, 2)));
 # endif
 _GL_CXXALIAS_SYS (mempcpy, void *,
-                  (void *restrict __dest, void const *restrict __src,
+                  (void *__restrict __dest, void const *__restrict __src,
                    size_t __n));
 _GL_CXXALIASWARN (mempcpy);
 #elif defined GNULIB_POSIXCHECK
@@ -220,11 +220,11 @@ _GL_WARN_ON_USE (rawmemchr, "rawmemchr is unportable - "
 #if @GNULIB_STPCPY@
 # if ! @HAVE_STPCPY@
 _GL_FUNCDECL_SYS (stpcpy, char *,
-                  (char *restrict __dst, char const *restrict __src)
+                  (char *__restrict __dst, char const *__restrict __src)
                   _GL_ARG_NONNULL ((1, 2)));
 # endif
 _GL_CXXALIAS_SYS (stpcpy, char *,
-                  (char *restrict __dst, char const *restrict __src));
+                  (char *__restrict __dst, char const *__restrict __src));
 _GL_CXXALIASWARN (stpcpy);
 #elif defined GNULIB_POSIXCHECK
 # undef stpcpy
@@ -243,21 +243,21 @@ _GL_WARN_ON_USE (stpcpy, "stpcpy is unportable - "
 #   define stpncpy rpl_stpncpy
 #  endif
 _GL_FUNCDECL_RPL (stpncpy, char *,
-                  (char *restrict __dst, char const *restrict __src,
+                  (char *__restrict __dst, char const *__restrict __src,
                    size_t __n)
                   _GL_ARG_NONNULL ((1, 2)));
 _GL_CXXALIAS_RPL (stpncpy, char *,
-                  (char *restrict __dst, char const *restrict __src,
+                  (char *__restrict __dst, char const *__restrict __src,
                    size_t __n));
 # else
 #  if ! @HAVE_STPNCPY@
 _GL_FUNCDECL_SYS (stpncpy, char *,
-                  (char *restrict __dst, char const *restrict __src,
+                  (char *__restrict __dst, char const *__restrict __src,
                    size_t __n)
                   _GL_ARG_NONNULL ((1, 2)));
 #  endif
 _GL_CXXALIAS_SYS (stpncpy, char *,
-                  (char *restrict __dst, char const *restrict __src,
+                  (char *__restrict __dst, char const *__restrict __src,
                    size_t __n));
 # endif
 _GL_CXXALIASWARN (stpncpy);
@@ -503,11 +503,11 @@ _GL_WARN_ON_USE (strrchr, "strrchr cannot work correctly on character strings "
 #if @GNULIB_STRSEP@
 # if ! @HAVE_STRSEP@
 _GL_FUNCDECL_SYS (strsep, char *,
-                  (char **restrict __stringp, char const *restrict __delim)
+                  (char **__restrict __stringp, char const *__restrict __delim)
                   _GL_ARG_NONNULL ((1, 2)));
 # endif
 _GL_CXXALIAS_SYS (strsep, char *,
-                  (char **restrict __stringp, char const *restrict __delim));
+                  (char **__restrict __stringp, char const *__restrict __delim));
 _GL_CXXALIASWARN (strsep);
 # if defined GNULIB_POSIXCHECK
 #  undef strsep
@@ -640,25 +640,25 @@ _GL_WARN_ON_USE (strcasestr, "strcasestr does work correctly on character "
 #   define strtok_r rpl_strtok_r
 #  endif
 _GL_FUNCDECL_RPL (strtok_r, char *,
-                  (char *restrict s, char const *restrict delim,
-                   char **restrict save_ptr)
+                  (char *__restrict s, char const *__restrict delim,
+                   char **__restrict save_ptr)
                   _GL_ARG_NONNULL ((2, 3)));
 _GL_CXXALIAS_RPL (strtok_r, char *,
-                  (char *restrict s, char const *restrict delim,
-                   char **restrict save_ptr));
+                  (char *__restrict s, char const *__restrict delim,
+                   char **__restrict save_ptr));
 # else
 #  if @UNDEFINE_STRTOK_R@ || defined GNULIB_POSIXCHECK
 #   undef strtok_r
 #  endif
 #  if ! @HAVE_DECL_STRTOK_R@
 _GL_FUNCDECL_SYS (strtok_r, char *,
-                  (char *restrict s, char const *restrict delim,
-                   char **restrict save_ptr)
+                  (char *__restrict s, char const *__restrict delim,
+                   char **__restrict save_ptr)
                   _GL_ARG_NONNULL ((2, 3)));
 #  endif
 _GL_CXXALIAS_SYS (strtok_r, char *,
-                  (char *restrict s, char const *restrict delim,
-                   char **restrict save_ptr));
+                  (char *__restrict s, char const *__restrict delim,
+                   char **__restrict save_ptr));
 # endif
 _GL_CXXALIASWARN (strtok_r);
 # if defined GNULIB_POSIXCHECK

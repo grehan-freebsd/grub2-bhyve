@@ -21,8 +21,10 @@
 #include <sys/socket.h>
 #include <grub/net.h>
 #include <sys/types.h>
+#ifdef __linux__
 #include <linux/if.h>
 #include <linux/if_tun.h>
+#endif
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -97,6 +99,7 @@ static struct grub_net_card emucard =
 
 GRUB_MOD_INIT(emunet)
 {
+#ifdef __linux__
   struct ifreq ifr;
   fd = open ("/dev/net/tun", O_RDWR | O_NONBLOCK);
   if (fd < 0)
@@ -109,6 +112,12 @@ GRUB_MOD_INIT(emunet)
       fd = -1;
       return;
     }
+#endif
+#ifdef __FreeBSD__
+  fd = open ("/dev/tap0", O_RDWR | O_NONBLOCK);
+  if (fd < 0)
+    return;
+#endif
   grub_net_card_register (&emucard);
 }
 

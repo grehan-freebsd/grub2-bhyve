@@ -1351,7 +1351,8 @@ grub_bsd_elf64_size_hook (grub_elf_t elf __attribute__ ((unused)),
       && phdr->p_type != PT_DYNAMIC)
     return 0;
 
-  paddr = phdr->p_paddr & 0xffffff;
+  /* XXX bhyve - extend mask */
+  paddr = phdr->p_paddr & 0xfffffff;
 
   if (paddr < kern_start)
     kern_start = paddr;
@@ -1375,7 +1376,9 @@ grub_bsd_elf64_hook (Elf64_Phdr * phdr, grub_addr_t * addr, int *do_load)
     }
 
   *do_load = 1;
-  paddr = phdr->p_paddr & 0xffffff;
+
+  /* XXX bhyve - extend mask */
+  paddr = phdr->p_paddr & 0xfffffff;
 
   *addr = (grub_addr_t) (paddr - kern_start + (grub_uint8_t *) kern_chunk_src);
 

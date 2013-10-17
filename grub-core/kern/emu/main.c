@@ -41,6 +41,12 @@
 #include <grub/partition.h>
 #include <grub/i18n.h>
 
+#ifdef BHYVE
+#include <grub/i386/memory.h>
+#include <grub/i386/relocator.h>
+#include <grub/emu/bhyve.h>
+#endif
+
 #include "progname.h"
 #include <argp.h>
 
@@ -51,6 +57,10 @@ static jmp_buf main_env;
 
 /* Store the prefix specified by an argument.  */
 static char *root_dev = NULL, *dir = NULL;
+
+#ifdef BHYVE
+static char *vmname = NULL;
+#endif
 
 int grub_no_autoload;
 
@@ -91,6 +101,9 @@ static struct argp_option options[] = {
    N_("use GRUB files in the directory DIR [default=%s]"), 0},
   {"verbose",     'v', 0,      0, N_("print verbose messages."), 0},
   {"hold",     'H', N_("SECS"),      OPTION_ARG_OPTIONAL, N_("wait until a debugger will attach"), 0},
+#ifdef BHYVE
+  {"memory", 'M', N_("MBYTES"), 0, N_("guest RAM in MB [default=%s]"), 0},
+#endif
   { 0, 0, 0, 0, 0, 0 }
 };
 
@@ -103,6 +116,10 @@ help_filter (int key, const char *text, void *input __attribute__ ((unused)))
       return xasprintf (text, DEFAULT_DIRECTORY);
     case 'm':
       return xasprintf (text, DEFAULT_DEVICE_MAP);
+#ifdef BHYVE
+    case 'M':
+      return xasprintf (text, DEFAULT_GUESTMEM);
+#endif
     default:
       return (char *) text;
     }
@@ -112,6 +129,9 @@ struct arguments
 {
   const char *dev_map;
   int hold;
+#ifdef BHYVE
+  grub_uint64_t memsz;
+#endif
 };
 
 static error_t
@@ -140,13 +160,25 @@ argp_parser (int key, char *arg, struct argp_state *state)
     case 'v':
       verbosity++;
       break;
+#ifdef BHYVE
+    case 'M':
+      arguments->memsz = grub_strtol(arg, NULL, 10);
+      if (arguments->memsz == 0)
+	arguments->memsz = DEFAULT_GUESTMEM;
+      break;
+#endif
 
     case ARGP_KEY_ARG:
       {
+#ifdef BHYVE
+	/* The name of the vm */
+	vmname = xstrdup (arg);
+#else
 	/* Too many arguments. */
 	fprintf (stderr, _("Unknown extra argument `%s'."), arg);
 	fprintf (stderr, "\n");
 	argp_usage (state);
+#endif
       }
       break;
 
@@ -177,6 +209,10 @@ main (int argc, char *argv[])
     { 
       .dev_map = DEFAULT_DEVICE_MAP,
       .hold = 0
+#ifdef BHYVE
+	,
+      .memsz = 256
+#endif
     };
   volatile int hold = 0;
 
@@ -189,6 +225,14 @@ main (int argc, char *argv[])
       fprintf (stderr, "%s", _("Error in parsing command line arguments\n"));
       exit(1);
     }
+
+#ifdef BHYVE
+  if (grub_emu_bhyve_init(vmname, arguments.memsz) != 0)
+    {
+      fprintf (stderr, "%s", _("Error in initializing VM\n"));
+      exit(1);
+    }
+#endif
 
   hold = arguments.hold;
   /* Wait until the ARGS.HOLD variable is cleared by an attached debugger. */
