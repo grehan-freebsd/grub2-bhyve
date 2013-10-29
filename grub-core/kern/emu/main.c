@@ -102,7 +102,7 @@ static struct argp_option options[] = {
   {"verbose",     'v', 0,      0, N_("print verbose messages."), 0},
   {"hold",     'H', N_("SECS"),      OPTION_ARG_OPTIONAL, N_("wait until a debugger will attach"), 0},
 #ifdef BHYVE
-  {"memory", 'M', N_("MBYTES"), 0, N_("guest RAM in MB [default=%s]"), 0},
+  {"memory", 'M', N_("MBYTES"), 0, N_("guest RAM in MB [default=%d]"), 0},
 #endif
   { 0, 0, 0, 0, 0, 0 }
 };
@@ -227,6 +227,13 @@ main (int argc, char *argv[])
     }
 
 #ifdef BHYVE
+  if (vmname == NULL)
+    {
+      char buf[80];
+      argp_help (&argp, stderr, ARGP_HELP_SEE, buf);
+      exit(1);
+    }
+
   if (grub_emu_bhyve_init(vmname, arguments.memsz) != 0)
     {
       fprintf (stderr, "%s", _("Error in initializing VM\n"));
