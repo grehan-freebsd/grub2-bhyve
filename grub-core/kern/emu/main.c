@@ -102,6 +102,7 @@ static struct argp_option options[] = {
   {"verbose",     'v', 0,      0, N_("print verbose messages."), 0},
   {"hold",     'H', N_("SECS"),      OPTION_ARG_OPTIONAL, N_("wait until a debugger will attach"), 0},
 #ifdef BHYVE
+  {"ncons",  'n', 0,            0, N_("disable insertion of console=ttys0"), 0},
   {"memory", 'M', N_("MBYTES"), 0, N_("guest RAM in MB [default=%d]"), 0},
 #endif
   { 0, 0, 0, 0, 0, 0 }
@@ -161,6 +162,9 @@ argp_parser (int key, char *arg, struct argp_state *state)
       verbosity++;
       break;
 #ifdef BHYVE
+    case 'n':
+      grub_emu_bhyve_unset_cinsert();
+      break;
     case 'M':
       arguments->memsz = grub_strtol(arg, NULL, 10);
       if (arguments->memsz == 0)
