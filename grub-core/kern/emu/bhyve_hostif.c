@@ -44,6 +44,8 @@ static uint16_t bhyve_gdt[] = {
 
 static struct vmctx *bhyve_ctx;
 
+static int bhyve_cinsert = 1;
+
 #define BHYVE_MAXSEGS	5
 struct {
   grub_uint64_t lomem, himem;
@@ -349,4 +351,16 @@ grub_emu_bhyve_virt(grub_uint64_t physaddr)
     virt = (char *)bhyve_g2h.himem_ptr + (physaddr - 4*GB);
 
   return (virt);
+}
+
+void
+grub_emu_bhyve_unset_cinsert(void)
+{
+  bhyve_cinsert = 0;
+}
+
+int
+grub_emu_bhyve_cinsert(void)
+{
+  return bhyve_cinsert;
 }
