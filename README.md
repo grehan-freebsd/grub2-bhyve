@@ -16,7 +16,7 @@ Running gmake will create a binary, grub-emu, in the grub-core directory.
 
 The command syntax is
 
-    grub-emu -r <root-dev> -m <device.map file> -M <guest-mem> <vmname>
+    grub-emu -r <root-dev> -m <device.map file> [-b] -M <guest-mem> <vmname>
 
 The device.map file is a text file that describes the mappings between
 grub device names and the filesystem images on the host e.g.
@@ -31,18 +31,32 @@ will be used as the device for pathnames without a device specifier.
 
 The -M parameter specifies the amount of bhyve guest memory in MBytes.
 
+The -b parameter disables auto-insertion of "console=ttyS0" to the
+ start of the Linux kernel command-line.
+
 To boot a linux kernel, the 'linux' command is used to load the kernel
 and specify command-line options, while the 'initrd' command is used
 to load the initrd. The 'boot' command is then issued to finalize 
 loading, set bhyve register state, and exit grub-emu.
+grub-emu will auto-insert a "console=ttyS0" line if there isn't one
+present in the command line. This can be disabled by passing the
+'-b' option to grub-emu.
 
-    linux  /isolinux/vmlinuz text console=ttyS0 earlyprintk=serial debug
+    linux  /isolinux/vmlinuz text earlyprintk=serial debug
     initrd /isolinux/initrd.img
     boot
 
 For OpenBSD, the command to load the kernel is 'kopenbsd'.
 
-    kopenbsd -h com0 /bsd.mpm
+    kopenbsd -h com0 /bsd.mp
     boot
 
+FreeBSD/amd64 can be booted using the kfreebsd command. Note that
+grub will not automatically source any of the FreeBSD loader variable
+files, or interpret these as the FreeBSD loader does. The boot process
+will have to be manual unless a grub.cfg file has been created.
+
+    kfreebsd -h /boot/kernel/kernel
+    kfreebsd_loadenv /boot/device.hints
+    boot
 
