@@ -249,6 +249,9 @@ grub_relocator64_boot (struct grub_relocator *rel __attribute__ ((unused)),
 		       grub_addr_t min_addr __attribute__ ((unused)),
 		       grub_addr_t max_addr __attribute__ ((unused)))
 {
+
+  grub_emu_bhyve_boot64(state);
+
   return GRUB_ERR_NONE;
 }
 

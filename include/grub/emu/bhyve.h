@@ -36,6 +36,7 @@ struct grub_bhyve_info {
 int grub_emu_bhyve_init(const char *vmname, grub_uint64_t memsz);
 void EXPORT_FUNC(grub_emu_bhyve_boot32)(grub_uint32_t bootaddr, 
 		     struct grub_relocator32_state rs);
+void EXPORT_FUNC(grub_emu_bhyve_boot64)(struct grub_relocator64_state rs);
 const struct grub_bhyve_info * EXPORT_FUNC(grub_emu_bhyve_info) (void);
 void * EXPORT_FUNC(grub_emu_bhyve_virt) (grub_uint64_t physaddr);
 

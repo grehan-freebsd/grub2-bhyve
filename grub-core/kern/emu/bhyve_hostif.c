@@ -287,6 +287,49 @@ grub_emu_bhyve_boot32(grub_uint32_t bt, struct grub_relocator32_state rs)
     grub_reboot();
 }
 
+/*
+ * 64-bit boot state initilization. This is really only used for FreeBSD.
+ * It is assumed that the repeating 1GB page tables have already been
+ * setup. The bhyve library call does almost everything - remaining
+ * GP register state is set here
+ */
+void
+grub_emu_bhyve_boot64(struct grub_relocator64_state rs)
+{
+  uint64_t gdt64[3];
+  uint64_t gdt64_addr;
+  int error;
+
+  /*
+   * Set up the GDT by copying it to just below the top of low memory
+   * and point the guest's GDT descriptor at it
+   */
+  gdt64_addr = bhyve_g2h.lomem - 2 * sizeof(gdt64);
+  vm_setup_freebsd_gdt(gdt64);
+  memcpy(grub_emu_bhyve_virt(gdt64_addr), gdt64, sizeof(gdt64));
+
+  /*
+   * Use the library API to set up a FreeBSD entry reg state
+   */
+  error = vm_setup_freebsd_registers(bhyve_ctx, 0, rs.rip, rs.cr3, 
+				     gdt64_addr, rs.rsp);
+  assert(error == 0);
+
+  /* Set up the remaining regs */
+  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RAX, rs.rax) == 0);
+  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RBX, rs.rbx) == 0);
+  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RCX, rs.rcx) == 0);
+  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RDX, rs.rdx) == 0);
+  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RSI, rs.rsi) == 0);
+
+  /*
+   * Exit cleanly, using the conditional test to avoid the noreturn
+   * warning.
+   */
+  if (gdt64_addr)
+    grub_reboot();
+}
+
 const struct grub_bhyve_info *
 grub_emu_bhyve_info(void)
 {
