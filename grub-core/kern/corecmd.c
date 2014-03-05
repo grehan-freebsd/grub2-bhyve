@@ -84,6 +84,7 @@ grub_core_cmd_insmod (struct grub_command *cmd __attribute__ ((unused)),
   if (argc == 0)
     return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("one argument expected"));
 
+#if 0
   if (argv[0][0] == '/' || argv[0][0] == '(' || argv[0][0] == '+')
     mod = grub_dl_load_file (argv[0]);
   else
@@ -91,6 +92,9 @@ grub_core_cmd_insmod (struct grub_command *cmd __attribute__ ((unused)),
 
   if (mod)
     grub_dl_ref (mod);
+#else
+  (void)mod;
+#endif
 
   return 0;
 }
