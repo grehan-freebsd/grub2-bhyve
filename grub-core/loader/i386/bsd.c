@@ -1665,6 +1665,8 @@ grub_cmd_openbsd (grub_extcmd_context_t ctxt, int argc, char *argv[])
 
       serial.device = (GRUB_OPENBSD_COM_MAJOR << 8) | port;
       serial.speed = speed;
+      serial.addr = -1;
+      serial.freq = 0;
 	  
       grub_bsd_add_meta (OPENBSD_BOOTARG_CONSOLE, &serial, sizeof (serial));
       bootflags |= OPENBSD_RB_SERCONS;
