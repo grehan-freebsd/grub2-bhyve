@@ -16,10 +16,11 @@ Running gmake will create a binary, grub-emu, in the grub-core directory.
 
 The command syntax is
 
-    grub-emu -r <root-dev> -m <device.map file> [-b] -M <guest-mem> <vmname>
+    grub-emu -r <root-dev> -m <device.map file> [-n] -M <guest-mem> <vmname>
 
 The device.map file is a text file that describes the mappings between
 grub device names and the filesystem images on the host e.g.
+
     (hd0)  /images/centos.iso
     (hd1)  /images/ubuntu-disk.img
 
@@ -31,7 +32,7 @@ will be used as the device for pathnames without a device specifier.
 
 The -M parameter specifies the amount of bhyve guest memory in MBytes.
 
-The -b parameter disables auto-insertion of "console=ttyS0" to the
+The -n parameter disables auto-insertion of "console=ttyS0" to the
  start of the Linux kernel command-line.
 
 To boot a linux kernel, the 'linux' command is used to load the kernel
@@ -40,13 +41,15 @@ to load the initrd. The 'boot' command is then issued to finalize
 loading, set bhyve register state, and exit grub-emu.
 grub-emu will auto-insert a "console=ttyS0" line if there isn't one
 present in the command line. This can be disabled by passing the
-'-b' option to grub-emu.
+'-n' option to grub-emu.
 
     linux  /isolinux/vmlinuz text earlyprintk=serial debug
     initrd /isolinux/initrd.img
     boot
 
-For OpenBSD, the command to load the kernel is 'kopenbsd'.
+For OpenBSD, the command to load the kernel is 'kopenbsd'. The "-h com0"
+option forces the use of the serial console - this should always be used
+with bhyve.
 
     kopenbsd -h com0 /bsd.mp
     boot
