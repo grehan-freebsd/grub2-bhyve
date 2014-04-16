@@ -42,6 +42,12 @@
 #error What the hell?
 #endif
 
+#ifdef BHYVE	/* should include <sys/param.h> */
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+#endif
+
 static int grub_console_attr = A_NORMAL;
 
 grub_uint8_t grub_console_cur_color = 7;
@@ -176,6 +182,11 @@ grub_ncurses_getxy (struct grub_term_output *term __attribute__ ((unused)))
 
   getyx (stdscr, y, x);
 
+#ifdef BHYVE
+  x = MIN(x, 255);
+  y = MIN(y, 255);
+#endif
+
   return (x << 8) | y;
 }
 
@@ -186,6 +197,11 @@ grub_ncurses_getwh (struct grub_term_output *term __attribute__ ((unused)))
   int y;
 
   getmaxyx (stdscr, y, x);
+
+#ifdef BHYVE
+  x = MIN(x, 255);
+  y = MIN(y, 255);
+#endif
 
   return (x << 8) | y;
 }
