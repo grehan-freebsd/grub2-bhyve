@@ -10,7 +10,9 @@ The following packages are required to build:
 
 The configure command line is:
 
-    ./configure --with-platform=emu CC=gcc47 LEX=/usr/local/bin/flex
+    ./configure --with-platform=emu CC=gcc47 LEX=/usr/local/bin/flex \
+        --enable-grub-mount=no --enable-grub-mkfont=no \
+	--enable-grub-emu-sdl=no --disable-nls
 
 Running gmake will create a binary, grub-emu, in the grub-core directory.
 
@@ -21,10 +23,10 @@ The command syntax is
 The device.map file is a text file that describes the mappings between
 grub device names and the filesystem images on the host e.g.
 
-    (hd0)  /images/centos.iso
+    (cd0)  /images/centos.iso
     (hd1)  /images/ubuntu-disk.img
 
-There is an additional device, (host), that is always available and
+There is an additional device, "(host)", that is always available and
 allows the host filesystem to be accessed.
 
 The -r parameter takes a device name from the device.map file which
