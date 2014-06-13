@@ -76,4 +76,7 @@
 #define OPENBSD_B_PARTSHIFT	8
 #define OPENBSD_B_TYPESHIFT	0
 
+#define OPENBSD_MAJOR_WD       	0	/* 'wd' major number */
+#define OPENBSD_MAJOR_SD       	4	/* 'sd' major number */
+
 #endif

@@ -132,7 +132,7 @@ static const struct grub_arg_option openbsd_opts[] =
     {"config", 'c', 0, N_("Change configured devices."), 0, 0},
     {"single", 's', 0, N_("Boot into single mode."), 0, 0},
     {"kdb", 'd', 0, N_("Enter in KDB on boot."), 0, 0},
-    {"root", 'r', 0, N_("Set root device."), "wdXY", ARG_TYPE_STRING},
+    {"root", 'r', 0, N_("Set root device."), "[sd|wd]XY", ARG_TYPE_STRING},
     {"serial", 'h', GRUB_ARG_OPTION_OPTIONAL, 
      N_("Use serial console."),
      /* TRANSLATORS: "com" is static and not to be translated. It refers to
@@ -1615,21 +1615,28 @@ grub_cmd_openbsd (grub_extcmd_context_t ctxt, int argc, char *argv[])
     {
       const char *arg = ctxt->state[OPENBSD_ROOT_ARG].arg;
       int unit, part;
-      if (*(arg++) != 'w' || *(arg++) != 'd')
-	return grub_error (GRUB_ERR_BAD_ARGUMENT,
-			   "only device specifications of form "
-			   "wd<number><lowercase letter> are supported");
+      int major;
+#define OPENBSD_ROOT_ERR \
+	"only device specifications of form " \
+      	"[sd|wd]<number><lowercase letter> are supported"
+
+      if (*arg != 'w' && *arg != 's')
+	return grub_error (GRUB_ERR_BAD_ARGUMENT, OPENBSD_ROOT_ERR);
+
+      major = (*arg == 's') ? OPENBSD_MAJOR_SD : OPENBSD_MAJOR_WD;
+
+      arg++;
+      if (*(arg++) != 'd')
+	return grub_error (GRUB_ERR_BAD_ARGUMENT, OPENBSD_ROOT_ERR);
 
       unit = grub_strtoul (arg, (char **) &arg, 10);
       if (! (arg && *arg >= 'a' && *arg <= 'z'))
-	return grub_error (GRUB_ERR_BAD_ARGUMENT,
-			   "only device specifications of form "
-			   "wd<number><lowercase letter> are supported");
+	return grub_error (GRUB_ERR_BAD_ARGUMENT, OPENBSD_ROOT_ERR);
 
       part = *arg - 'a';
 
       bootdev = (OPENBSD_B_DEVMAGIC + (unit << OPENBSD_B_UNITSHIFT) +
-		 (part << OPENBSD_B_PARTSHIFT));
+		 (part << OPENBSD_B_PARTSHIFT) + major);
     }
   else
     bootdev = 0;
