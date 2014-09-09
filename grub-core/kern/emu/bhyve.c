@@ -72,16 +72,28 @@ grub_relocator_new (void)
   return ret;
 }
 
+/* Return true if [point,point+size) is disjoint from [otarget,otarget+osize) */
+static int
+grub_relocator_disjoint(grub_phys_addr_t point, grub_size_t size,
+		       grub_phys_addr_t otarget, grub_size_t osize)
+{
+  if ((point >= (otarget + osize)) || ((point + size) < otarget))
+    return 1;
+
+  return 0;
+}
+
 /* Return true if point is within [target, target+size) */
 static int
 grub_relocator_within(grub_phys_addr_t point, grub_phys_addr_t target,
-		      grub_size_t size)
+                      grub_size_t size)
 {
   if (point >= target && point < (target + size))
     return 1;
 
   return 0;
 }
+
 
 grub_err_t
 grub_relocator_alloc_chunk_addr (struct grub_relocator *rel,
@@ -102,11 +114,11 @@ grub_relocator_alloc_chunk_addr (struct grub_relocator *rel,
    * overlaps with
    */
   SLIST_FOREACH(cp, &rel->head, next) {
-    if (grub_relocator_within(target, cp->target, cp->size) ||       
-	grub_relocator_within(end, cp->target, cp->size)) {
-      err = GRUB_ERR_BAD_ARGUMENT;
-      goto done;
-    }
+    if (!grub_relocator_disjoint(target, size, cp->target, cp->size))
+      {
+	err = GRUB_ERR_BAD_ARGUMENT;
+	goto done;
+      }
   }
 
   /*
@@ -228,19 +240,35 @@ grub_mmap_iterate (grub_memory_hook_t hook)
  * Boot handoff
  */
 grub_err_t
-grub_relocator32_boot (struct grub_relocator *rel __attribute__ ((unused)),
+grub_relocator32_boot (struct grub_relocator *rel,
 		       struct grub_relocator32_state state,
 		       int avoid_efi_bootservices __attribute__ ((unused)))
 {
+  grub_relocator_chunk_t ch;
+  grub_err_t err;
+
+  /*
+   * Attempt to allocate guest low memory (0x8000<->0xF000) for the boot state 
+   * (GDT etc). Use 8-byte alignment as spec'd in the SDM 3A, 3.5.1.
+   */
+  err = grub_relocator_alloc_chunk_align (rel, &ch,
+					  0x8000, 0xF000,
+					  binfo->bootsz, 8,
+					  GRUB_RELOCATOR_PREFERENCE_NONE,
+					  0);
+
+  if (err == GRUB_ERR_NONE)
+    grub_emu_bhyve_boot32(get_physical_target_address (ch), state);
 
   /*
    * For now, just hard-code the address to use for boot state (GDT etc).
    * This could be calculated since the size of this area is in the
    * grub_bhyve_info struct.
    */
-  grub_emu_bhyve_boot32(0x10000, state);
+  //grub_emu_bhyve_boot32(0x10000, state);
 
-  return GRUB_ERR_NONE;
+
+  return err;
 }
 
 grub_err_t
