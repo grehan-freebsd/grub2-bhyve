@@ -260,14 +260,6 @@ grub_relocator32_boot (struct grub_relocator *rel,
   if (err == GRUB_ERR_NONE)
     grub_emu_bhyve_boot32(get_physical_target_address (ch), state);
 
-  /*
-   * For now, just hard-code the address to use for boot state (GDT etc).
-   * This could be calculated since the size of this area is in the
-   * grub_bhyve_info struct.
-   */
-  //grub_emu_bhyve_boot32(0x10000, state);
-
-
   return err;
 }
 
