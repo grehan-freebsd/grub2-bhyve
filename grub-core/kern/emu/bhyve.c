@@ -94,6 +94,18 @@ grub_relocator_within(grub_phys_addr_t point, grub_phys_addr_t target,
   return 0;
 }
 
+static grub_phys_addr_t
+grub_relocator_end(struct grub_relocator *rel)
+{
+  struct grub_relocator_chunk *cp, *cp_last;
+  
+  cp_last = NULL;
+  SLIST_FOREACH(cp, &rel->head, next) {
+    cp_last = cp;
+  }
+
+  return (cp_last ? cp_last->target + cp_last->size : 0);
+}
 
 grub_err_t
 grub_relocator_alloc_chunk_addr (struct grub_relocator *rel,
@@ -257,6 +269,17 @@ grub_relocator32_boot (struct grub_relocator *rel,
 					  GRUB_RELOCATOR_PREFERENCE_NONE,
 					  0);
 
+  /*
+   * It's possible that all of that mem has been allocated. In that
+   * case, go to the end of allocated memory and try there
+   */
+  if (err) {
+    grub_phys_addr_t target;
+
+    target = ALIGN_UP(grub_relocator_end(rel), 8);
+    err = grub_relocator_alloc_chunk_addr (rel, &ch, target, binfo->bootsz);
+  }
+  
   if (err == GRUB_ERR_NONE)
     grub_emu_bhyve_boot32(get_physical_target_address (ch), state);
 
