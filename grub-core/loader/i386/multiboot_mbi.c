@@ -352,6 +352,7 @@ fill_vbe_info (struct multiboot_info *mbi, grub_uint8_t *ptrorig,
 }
 #endif
 
+#if 0 /* BHYVE - not needed */
 static grub_err_t
 retrieve_video_parameters (struct multiboot_info *mbi,
 			   grub_uint8_t *ptrorig, grub_uint32_t ptrdest)
@@ -433,6 +434,7 @@ retrieve_video_parameters (struct multiboot_info *mbi,
 
   return GRUB_ERR_NONE;
 }
+#endif
 
 grub_err_t
 grub_multiboot_make_mbi (grub_uint32_t *target)
@@ -575,6 +577,7 @@ grub_multiboot_make_mbi (grub_uint32_t *target)
       ptrdest += elf_sec_entsize * elf_sec_num;
     }
 
+#if 0 /* BHYVE - not needed */
   err = retrieve_video_parameters (mbi, ptrorig, ptrdest);
   if (err)
     {
@@ -590,6 +593,7 @@ grub_multiboot_make_mbi (grub_uint32_t *target)
       ptrdest += mbi->framebuffer_palette_num_colors
 	* sizeof (struct multiboot_color);
     }
+#endif
 
 #if GRUB_MACHINE_HAS_VBE
   ptrorig += sizeof (struct grub_vbe_info_block);
@@ -716,10 +720,8 @@ grub_multiboot_add_module (grub_addr_t start, grub_size_t size,
   if (modules_last)
     modules_last->next = newmod;
   else
-    {
-      modules = newmod;
-      modules_last->next = NULL;
-    }
+    modules = newmod;
+
   modules_last = newmod;
 
   modcnt++;
