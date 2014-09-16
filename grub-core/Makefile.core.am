@@ -36863,6 +36863,28 @@ multiboot2.marker: $(multiboot2_module_SOURCES) $(nodist_multiboot2_module_SOURC
 	grep 'MARKER' $@.new > $@; rm -f $@.new
 endif
 
+if COND_emu
+platform_PROGRAMS += multiboot.module
+MODULE_FILES += multiboot.module$(EXEEXT)
+multiboot_module_SOURCES  = loader/i386/multiboot_mbi.c loader/multiboot.c  ## platform sources
+nodist_multiboot_module_SOURCES  =  ## platform nodist sources
+multiboot_module_LDADD  = 
+multiboot_module_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_MODULE) 
+multiboot_module_LDFLAGS  = $(AM_LDFLAGS) $(LDFLAGS_MODULE) 
+multiboot_module_CPPFLAGS  = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) 
+multiboot_module_CCASFLAGS  = $(AM_CCASFLAGS) $(CCASFLAGS_MODULE) 
+EXTRA_DIST += loader/multiboot_elfxx.c 
+BUILT_SOURCES += $(nodist_multiboot_module_SOURCES)
+CLEANFILES += $(nodist_multiboot_module_SOURCES)
+MOD_FILES += multiboot.mod
+MARKER_FILES += multiboot.marker
+CLEANFILES += multiboot.marker
+
+multiboot.marker: $(multiboot_module_SOURCES) $(nodist_multiboot_module_SOURCES)
+	$(TARGET_CPP) -DGRUB_LST_GENERATOR $(CPPFLAGS_MARKER) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(multiboot_module_CPPFLAGS) $(CPPFLAGS) $^ > $@.new || (rm -f $@; exit 1)
+	grep 'MARKER' $@.new > $@; rm -f $@.new
+endif
+
 if COND_i386_pc
 platform_PROGRAMS += multiboot.module
 MODULE_FILES += multiboot.module$(EXEEXT)
