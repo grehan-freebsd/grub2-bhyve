@@ -191,7 +191,9 @@ grub_multiboot_set_console (int console_type, int accepted_consoles,
       if (console_required)
 	return grub_error (GRUB_ERR_BAD_OS,
 			   "OS requires a console but none is available");
+#if 0 /* BHYVE - no need for this alarming warning */
       grub_puts_ (N_("WARNING: no console will be available to OS"));
+#endif /* BHYVE */
       accepts_video = 0;
       accepts_ega_text = 0;
       return GRUB_ERR_NONE;
