@@ -151,6 +151,9 @@ static const grub_uint32_t openbsd_flags[] =
 #define OPENBSD_ROOT_ARG (ARRAY_SIZE (openbsd_flags) - 1)
 #define OPENBSD_SERIAL_ARG (ARRAY_SIZE (openbsd_flags))
 
+/* Match where the OpenBSD bootloader places bootargs */
+#define	GRUB_OPENBSD_TEMP_BUFFER   0x2000
+
 static const struct grub_arg_option netbsd_opts[] =
   {
     {"no-smp", '1', 0, N_("Disable SMP."), 0, 0},
@@ -850,7 +853,7 @@ grub_openbsd_boot (void)
 			       + tag->len);
   }
 
-  buf_target = GRUB_BSD_TEMP_BUFFER - 9 * sizeof (grub_uint32_t);
+  buf_target = GRUB_OPENBSD_TEMP_BUFFER - 9 * sizeof (grub_uint32_t);
   {
     grub_relocator_chunk_t ch;
     err = grub_relocator_alloc_chunk_addr (relocator, &ch, buf_target,
