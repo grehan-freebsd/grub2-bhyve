@@ -49,12 +49,19 @@ present in the command line. This can be disabled by passing the
     initrd /isolinux/initrd.img
     boot
 
-For OpenBSD, the command to load the kernel is 'kopenbsd'. The "-h com0"
+For OpenBSD i386/amd64, the command to load the kernel is 'kopenbsd'. The "-h com0"
 option forces the use of the serial console - this should always be used
-with bhyve.
+with bhyve. The root device is specified with the "-r <sdX|wdX>" parameter.
 
-    kopenbsd -h com0 /bsd.mp
+    kopenbsd -h com0 -r sd0a /bsd
     boot
+
+NetBSD/amd64 is booted with the 'knetbsd' command. Similar to OpenBSD,
+the "-h" and "-r" parameters should be used to specify a serial console
+and the root device.
+
+    knetbsd -h -r cd0a /netbsd
+    boot 
 
 FreeBSD/amd64 can be booted using the kfreebsd command. Note that
 grub will not automatically source any of the FreeBSD loader variable
