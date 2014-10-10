@@ -202,6 +202,21 @@ grub_relocator_alloc_chunk_align (struct grub_relocator *rel,
   grub_uint64_t addr;
 
   /*
+   * Filter/modify allocations that specify a min address <= 1MB.
+   * This is really a no-go area on x86, but loader code is often
+   * machine-independent (e.g. multiboot) and has no concept of
+   * this, resulting in requests for ranges starting at 0.
+   *
+   * If the size/alignment will fit into 1MB<->max_addr, change
+   * the start to 1MB.
+   */
+#define ONE_MB	(1024*1024)
+  if (min_addr < ONE_MB) {
+    if ((align + size + ONE_MB) < max_addr)
+      min_addr = ONE_MB;
+  }
+
+  /*
    * Extremely simplistic - run through the given address space and
    * attempt allocations at the specified alignment until successful,
    * or no allocations could be found
