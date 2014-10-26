@@ -28,6 +28,16 @@
 # define A_STANDOUT	0
 #endif /* ! A_STANDOUT */
 
+#ifdef BHYVE
+#include <sys/param.h>
+
+#include <fcntl.h>
+#include <stdlib.h>
+#include <termios.h>
+
+#include <grub/emu/bhyve.h>
+#endif
+
 #include <grub/emu/console.h>
 #include <grub/term.h>
 #include <grub/types.h>
@@ -42,10 +52,16 @@
 #error What the hell?
 #endif
 
-#ifdef BHYVE	/* should include <sys/param.h> */
-#ifndef MIN
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#endif
+#ifdef BHYVE
+static SCREEN *g_term = NULL;
+static const char *g_cdev = NULL;
+
+void
+grub_emu_bhyve_set_console_dev(const char *dev)
+{
+
+        g_cdev = dev;
+}
 #endif
 
 static int grub_console_attr = A_NORMAL;
@@ -236,7 +252,45 @@ grub_ncurses_refresh (struct grub_term_output *term __attribute__ ((unused)))
 static grub_err_t
 grub_ncurses_init (struct grub_term_output *term __attribute__ ((unused)))
 {
-  initscr ();
+#ifdef BHYVE
+  const char *term_type;
+  struct termios termi;
+  FILE *fin, *fout;
+  int fd, rc;
+
+  if (g_cdev != NULL) {
+    /* Open user-supplied console device. */
+    fd = open (g_cdev, O_RDWR);
+    if (fd < 0)
+      return (GRUB_ERR_UNKNOWN_DEVICE);
+
+    rc = tcgetattr (fd, &termi);
+    if (rc < 0)
+      return (GRUB_ERR_IO);
+    cfmakeraw (&termi);
+    rc = tcsetattr (fd, 0, &termi);
+    if (rc < 0)
+      return (GRUB_ERR_IO);
+
+    fin = fdopen (fd, "r");
+    fout = fdopen (fd, "w");
+    if (fin == NULL || fout == NULL)
+      return (GRUB_ERR_OUT_OF_MEMORY);
+
+    term_type = "vt102";
+    if (getenv ("TERM") != NULL)
+      term_type = getenv ("TERM");
+
+    g_term = newterm (term_type, fout, fin);
+    if (g_term == NULL)
+      return (GRUB_ERR_BUG);
+
+    set_term (g_term);
+  } else
+    /* Default to stdin/out. */
+#endif  /* BHYVE */
+    initscr ();
+
   raw ();
   noecho ();
   scrollok (stdscr, TRUE);
@@ -272,6 +326,13 @@ grub_ncurses_init (struct grub_term_output *term __attribute__ ((unused)))
 static grub_err_t
 grub_ncurses_fini (struct grub_term_output *term __attribute__ ((unused)))
 {
+
+#ifdef BHYVE
+  if (g_term != NULL)
+    delscreen (g_term);
+  g_term = NULL;
+#endif
+
   endwin ();
   return 0;
 }
