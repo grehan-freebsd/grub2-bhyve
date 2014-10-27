@@ -327,13 +327,13 @@ static grub_err_t
 grub_ncurses_fini (struct grub_term_output *term __attribute__ ((unused)))
 {
 
+  endwin ();
 #ifdef BHYVE
   if (g_term != NULL)
     delscreen (g_term);
   g_term = NULL;
 #endif
 
-  endwin ();
   return 0;
 }
 
