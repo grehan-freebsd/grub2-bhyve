@@ -34,6 +34,7 @@ struct grub_bhyve_info {
 };
 
 int grub_emu_bhyve_init(const char *vmname, grub_uint64_t memsz);
+void grub_emu_bhyve_set_console_dev(const char *dev);
 void grub_emu_bhyve_unset_cinsert(void);
 int  EXPORT_FUNC(grub_emu_bhyve_cinsert) (void);
 void EXPORT_FUNC(grub_emu_bhyve_boot32)(grub_uint32_t bootaddr, 
