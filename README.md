@@ -2,17 +2,19 @@ grub2-bhyve
 ===========
 
 The following packages are required to build:
-* gcc47
+* gcc48
 * flex
 * bison
 * gmake
-* gdb76 (for debugging)
+
+Optionally:
+* gdb78 (for debugging)
 
 The configure command line is:
 
     ./configure --with-platform=emu CC=gcc47 LEX=/usr/local/bin/flex \
         --enable-grub-mount=no --enable-grub-mkfont=no \
-	--enable-grub-emu-sdl=no --disable-nls
+	--enable-grub-emu-sdl=no --disable-nls --disable-werror
 
 Running gmake will create a binary, grub-emu, in the grub-core directory.
 
@@ -49,9 +51,10 @@ present in the command line. This can be disabled by passing the
     initrd /isolinux/initrd.img
     boot
 
-For OpenBSD i386/amd64, the command to load the kernel is 'kopenbsd'. The "-h com0"
-option forces the use of the serial console - this should always be used
-with bhyve. The root device is specified with the "-r <sdX|wdX>" parameter.
+For OpenBSD i386/amd64, the command to load the kernel is 'kopenbsd'. The
+"-h com0" option forces the use of the serial console - this should always
+be used with bhyve. The root device is specified with the "-r <sdX|wdX>"
+parameter.
 
     kopenbsd -h com0 -r sd0a /bsd
     boot
