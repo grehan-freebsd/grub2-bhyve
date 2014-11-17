@@ -480,7 +480,17 @@ grub_linux_boot (void)
 	  linux_params.video_height = 25;
 	}
     }
-
+#if 1 /* BHYVE */
+  else if (grub_emu_bhyve_vgainsert())
+    {
+      /*
+       * The width/height have to be set for older Linux versions
+       * (Centos 5.* and earlier) to avoid a zero-sized alloc panic
+       */
+      linux_params.video_width = 80;
+      linux_params.video_height = 25;     
+    }
+#endif
   mmap_size = find_mmap_size ();
   /* Make sure that each size is aligned to a page boundary.  */
   cl_offset = ALIGN_UP (mmap_size + sizeof (linux_params), 4096);

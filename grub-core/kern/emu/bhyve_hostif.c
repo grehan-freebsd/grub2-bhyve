@@ -45,6 +45,7 @@ static uint16_t bhyve_gdt[] = {
 static struct vmctx *bhyve_ctx;
 
 static int bhyve_cinsert = 1;
+static int bhyve_vgainsert = 1;
 
 #define BHYVE_MAXSEGS	5
 struct {
@@ -363,4 +364,16 @@ int
 grub_emu_bhyve_cinsert(void)
 {
   return bhyve_cinsert;
+}
+
+void
+grub_emu_bhyve_unset_vgainsert(void)
+{
+  bhyve_vgainsert = 0;
+}
+
+int
+grub_emu_bhyve_vgainsert(void)
+{
+  return bhyve_vgainsert;
 }
