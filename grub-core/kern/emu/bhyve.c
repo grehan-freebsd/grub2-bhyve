@@ -275,11 +275,11 @@ grub_relocator32_boot (struct grub_relocator *rel,
   grub_err_t err;
 
   /*
-   * Attempt to allocate guest low memory (0x8000<->0xF000) for the boot state 
+   * Attempt to allocate guest low memory (0x0200<->0xF000) for the boot state 
    * (GDT etc). Use 8-byte alignment as spec'd in the SDM 3A, 3.5.1.
    */
   err = grub_relocator_alloc_chunk_align (rel, &ch,
-					  0x8000, 0xF000,
+					  0x0200, 0xF000,
 					  binfo->bootsz, 8,
 					  GRUB_RELOCATOR_PREFERENCE_NONE,
 					  0);
