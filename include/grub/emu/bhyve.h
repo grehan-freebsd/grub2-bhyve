@@ -30,7 +30,7 @@
 #undef PACKAGE_VERSION
 #undef PACKAGE_BUGREPORT
 #define PACKAGE_NAME		"GRUB-BHYVE"
-#define PACKAGE_VERSION		"2.00:0.25"
+#define PACKAGE_VERSION		"2.00:0.30"
 #define PACKAGE_BUGREPORT	"freebsd-virtualization@freebsd.org"
 
 #define DEFAULT_GUESTMEM	256
