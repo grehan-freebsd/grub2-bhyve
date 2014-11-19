@@ -59,6 +59,7 @@ static jmp_buf main_env;
 static char *root_dev = NULL, *dir = NULL;
 
 #ifdef BHYVE
+#define MB (1024 * 1024)
 static char *vmname = NULL;
 #endif
 
@@ -174,9 +175,11 @@ argp_parser (int key, char *arg, struct argp_state *state)
       grub_emu_bhyve_unset_cinsert();
       break;
     case 'M':
-      arguments->memsz = grub_strtol(arg, NULL, 10);
-      if (arguments->memsz == 0)
-	arguments->memsz = DEFAULT_GUESTMEM;
+      if (grub_emu_bhyve_parse_memsize(arg, &arguments->memsz) != 0) {
+	fprintf (stderr, _("Invalid guest memory size `%s'."), arg);
+	fprintf (stderr, "\n");
+	return EINVAL;
+      }
       break;
 #endif
 
@@ -201,8 +204,13 @@ argp_parser (int key, char *arg, struct argp_state *state)
 }
 
 static struct argp argp = {
+#ifdef BHYVE
+  options, argp_parser, "vmname",
+  N_("grub-bhyve boot loader."),
+#else
   options, argp_parser, NULL,
   N_("GRUB emulator."),
+#endif
   NULL, help_filter, NULL
 };
 
@@ -223,7 +231,7 @@ main (int argc, char *argv[])
       .hold = 0
 #ifdef BHYVE
 	,
-      .memsz = 256
+      .memsz = DEFAULT_GUESTMEM * MB
 #endif
     };
   volatile int hold = 0;
@@ -242,6 +250,7 @@ main (int argc, char *argv[])
   if (vmname == NULL)
     {
       char buf[80];
+      fprintf (stderr, "%s", _("Required VM name parameter not supplied\n"));
       argp_help (&argp, stderr, ARGP_HELP_SEE, buf);
       exit(1);
     }

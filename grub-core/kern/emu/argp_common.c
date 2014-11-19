@@ -25,6 +25,10 @@
 #include <progname.h>
 #include <argp.h>
 
+#ifdef BHYVE
+#include <grub/emu/bhyve.h>
+#endif
+
 /* Print the version information.  */
 static void
 print_version (FILE *stream, struct argp_state *state)

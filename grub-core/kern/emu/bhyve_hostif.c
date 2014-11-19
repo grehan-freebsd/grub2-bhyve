@@ -63,11 +63,6 @@ grub_emu_bhyve_init(const char *name, grub_uint64_t memsz)
   int val;
   grub_uint64_t lomemsz;
 
-  /*
-   * Convert MB into bhytes
-   */
-  memsz *= 1024*1024;
-
   err = vm_create (name);
   if (err != 0 && errno != EEXIST)
     {
@@ -352,6 +347,13 @@ grub_emu_bhyve_virt(grub_uint64_t physaddr)
     virt = (char *)bhyve_g2h.himem_ptr + (physaddr - 4*GB);
 
   return (virt);
+}
+
+int
+grub_emu_bhyve_parse_memsize(const char *arg, grub_uint64_t *size)
+{
+  /* XXX assume size_t == uint64_t. Safe for amd64 */
+  return (vm_parse_memsize(arg, size));
 }
 
 void
