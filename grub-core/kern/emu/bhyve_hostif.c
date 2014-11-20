@@ -352,7 +352,10 @@ grub_emu_bhyve_virt(grub_uint64_t physaddr)
 int
 grub_emu_bhyve_parse_memsize(const char *arg, grub_uint64_t *size)
 {
-  /* XXX assume size_t == uint64_t. Safe for amd64 */
+  /*
+   * Assume size_t == uint64_t. Safe for amd64, which is the
+   * only platform grub-bhyve will ever run on.
+   */
   return (vm_parse_memsize(arg, size));
 }
 

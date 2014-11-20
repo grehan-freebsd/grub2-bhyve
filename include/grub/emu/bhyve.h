@@ -29,11 +29,11 @@
 #undef PACKAGE_NAME
 #undef PACKAGE_VERSION
 #undef PACKAGE_BUGREPORT
-#define PACKAGE_NAME		"GRUB-BHYVE"
-#define PACKAGE_VERSION		"2.00:0.30"
-#define PACKAGE_BUGREPORT	"freebsd-virtualization@freebsd.org"
+#define	PACKAGE_NAME		"GRUB-BHYVE"
+#define	PACKAGE_VERSION		"2.00:0.30"
+#define	PACKAGE_BUGREPORT	"freebsd-virtualization@freebsd.org"
 
-#define DEFAULT_GUESTMEM	256
+#define	DEFAULT_GUESTMEM	256
 
 struct grub_bhyve_info {
   int bootsz;
@@ -41,7 +41,7 @@ struct grub_bhyve_info {
   struct grub_mmap_region *segs;
 };
 
-int grub_emu_bhyve_init(const char *vmname, grub_uint64_t memsz);
+int  grub_emu_bhyve_init(const char *vmname, grub_uint64_t memsz);
 int  grub_emu_bhyve_parse_memsize(const char *arg, grub_uint64_t *size);
 void grub_emu_bhyve_set_console_dev(const char *dev);
 void grub_emu_bhyve_unset_cinsert(void);
