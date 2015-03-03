@@ -174,7 +174,20 @@ grub_set_prefix_and_root (void)
   if (device)
     {
       char *prefix_set;
-    
+#ifdef BHYVE
+      char *grub_cfg;
+
+      grub_cfg = path + grub_strlen (path);
+      while (grub_cfg != path && *grub_cfg != '/')
+	grub_cfg--;
+
+      if (grub_cfg != path)
+	{
+	  *grub_cfg++ = '\0';
+	  if (grub_strlen (grub_cfg) > 0)
+	    grub_env_set ("grub_cfg", grub_cfg);
+     	}
+#endif
       prefix_set = grub_xasprintf ("(%s)%s", device, path ? : "");
       if (prefix_set)
 	{
@@ -227,6 +240,9 @@ grub_main (void)
   grub_set_prefix_and_root ();
   grub_env_export ("root");
   grub_env_export ("prefix");
+#ifdef BHYVE
+  grub_env_export ("grub_cfg");
+#endif
 
   grub_register_core_commands ();
 

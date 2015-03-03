@@ -59,6 +59,8 @@ static jmp_buf main_env;
 static char *root_dev = NULL, *dir = NULL;
 
 #ifdef BHYVE
+static char *grub_cfg = NULL;
+
 #define MB (1024 * 1024)
 static char *vmname = NULL;
 #endif
@@ -82,7 +84,11 @@ void
 grub_machine_get_bootlocation (char **device, char **path)
 {
   *device = root_dev;
+#ifdef BHYVE
+  *path = grub_xasprintf ("%s/%s", dir, grub_cfg);
+#else
   *path = dir;
+#endif
 }
 
 void
@@ -105,6 +111,7 @@ static struct argp_option options[] = {
 #ifdef BHYVE
   {"cons-dev", 'c', N_("cons-dev"), 0, N_("a tty(4) device to use for terminal I/O"), 0},
   {"evga",  'e', 0,            0, N_("exclude VGA rows/cols from bootinfo"), 0},
+  {"grub-cfg", 'g', N_("CFG"), 0, N_("alternative name of grub.cfg"), 0},
   {"ncons",  'n', 0,            0, N_("disable insertion of console=ttys0"), 0},
   {"memory", 'M', N_("MBYTES"), 0, N_("guest RAM in MB [default=%d]"), 0},
 #endif
@@ -121,6 +128,8 @@ help_filter (int key, const char *text, void *input __attribute__ ((unused)))
     case 'm':
       return xasprintf (text, DEFAULT_DEVICE_MAP);
 #ifdef BHYVE
+    case 'g':
+      return xasprintf (text, DEFAULT_GRUB_CFG);
     case 'M':
       return xasprintf (text, DEFAULT_GUESTMEM);
 #endif
@@ -170,6 +179,10 @@ argp_parser (int key, char *arg, struct argp_state *state)
       break;
     case 'e':
       grub_emu_bhyve_unset_vgainsert();
+      break;
+    case 'g':
+      free (grub_cfg);
+      grub_cfg = xstrdup(arg);
       break;
     case 'n':
       grub_emu_bhyve_unset_cinsert();
@@ -239,6 +252,10 @@ main (int argc, char *argv[])
   set_program_name (argv[0]);
 
   dir = xstrdup (DEFAULT_DIRECTORY);
+
+#ifdef BHYVE
+  grub_cfg = xstrdup (DEFAULT_GRUB_CFG);
+#endif
 
   if (argp_parse (&argp, argc, argv, 0, 0, &arguments) != 0)
     {
