@@ -1488,7 +1488,7 @@ module = {
   extra_dist = script/parser.y;
 
   cflags = '$(CFLAGS_POSIX) -Wno-redundant-decls';
-  cppflags = '$(CPPFLAGS_POSIX)';
+  cppflags = '-DBHYVE $(CPPFLAGS_POSIX)';
 };
 
 module = {

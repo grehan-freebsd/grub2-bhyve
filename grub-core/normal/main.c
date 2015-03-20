@@ -334,11 +334,22 @@ grub_cmd_normal (struct grub_command *cmd __attribute__ ((unused)),
 	 so that it won't get broken by longjmp.  */
       char *config;
       const char *prefix;
+#ifdef BHYVE
+      const char *grubcfg;
+#endif
 
       prefix = grub_env_get ("prefix");
       if (prefix)
 	{
+#ifdef BHYVE
+	  grubcfg = grub_env_get ("grub_cfg");
+	  if (!grubcfg)
+	    grubcfg = "grub.cfg";
+
+	  config = grub_xasprintf ("%s/%s", prefix, grubcfg);
+#else
 	  config = grub_xasprintf ("%s/grub.cfg", prefix);
+#endif
 	  if (! config)
 	    goto quit;
 

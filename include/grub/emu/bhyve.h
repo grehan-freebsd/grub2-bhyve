@@ -34,6 +34,7 @@
 #define	PACKAGE_BUGREPORT	"freebsd-virtualization@freebsd.org"
 
 #define	DEFAULT_GUESTMEM	256
+#define	DEFAULT_GRUB_CFG	"grub.cfg"
 
 struct grub_bhyve_info {
   int bootsz;
