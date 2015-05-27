@@ -260,7 +260,7 @@ grub_ncurses_init (struct grub_term_output *term __attribute__ ((unused)))
 
   if (g_cdev != NULL) {
     /* Open user-supplied console device. */
-    fd = open (g_cdev, O_RDWR);
+    fd = open (g_cdev, O_RDWR | O_NONBLOCK);
     if (fd < 0)
       return (GRUB_ERR_UNKNOWN_DEVICE);
 
