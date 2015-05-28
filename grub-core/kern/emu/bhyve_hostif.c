@@ -62,12 +62,21 @@ grub_emu_bhyve_init(const char *name, grub_uint64_t memsz)
   int err;
   int val;
   grub_uint64_t lomemsz;
+#ifdef VMMAPI_VERSION
+  int need_reinit = 0;
+#endif
 
   err = vm_create (name);
-  if (err != 0 && errno != EEXIST)
+  if (err != 0)
     {
-      fprintf (stderr, "Could not create VM %s\n", name);
-      return GRUB_ERR_ACCESS_DENIED;
+      if (errno != EEXIST)
+        {
+          fprintf (stderr, "Could not create VM %s\n", name);
+          return GRUB_ERR_ACCESS_DENIED;
+        }
+#ifdef VMMAPI_VERSION
+        need_reinit = 1;
+#endif
     }
 
   bhyve_ctx = vm_open (name);
@@ -76,6 +85,18 @@ grub_emu_bhyve_init(const char *name, grub_uint64_t memsz)
       fprintf (stderr, "Could not open VM %s\n", name);
       return GRUB_ERR_BUG;
     }
+
+#ifdef VMMAPI_VERSION
+  if (need_reinit)
+    {
+      err = vm_reinit (bhyve_ctx);
+      if (err != 0)
+        {
+          fprintf (stderr, "Could not reinit VM %s\n", name);
+          return GRUB_ERR_BUG;
+        }
+    }
+#endif
 
   val = 0;
   err = vm_get_capability (bhyve_ctx, 0, VM_CAP_UNRESTRICTED_GUEST, &val);
