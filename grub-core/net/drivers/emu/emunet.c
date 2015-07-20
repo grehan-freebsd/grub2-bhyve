@@ -114,9 +114,15 @@ GRUB_MOD_INIT(emunet)
     }
 #endif
 #ifdef __FreeBSD__
-  fd = open ("/dev/tap0", O_RDWR | O_NONBLOCK);
-  if (fd < 0)
-    return;
+  /*
+   * To experiment with this on FreeBSD on a tap device, use the
+   * following code fragment:
+   *    fd = open ("/dev/tap0", O_RDWR | O_NONBLOCK);
+   *    if (fd < 0)
+   *      return;
+   */
+  fd = -1;
+  return;
 #endif
   grub_net_card_register (&emucard);
 }
