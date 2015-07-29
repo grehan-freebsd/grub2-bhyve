@@ -139,6 +139,23 @@ grub_ncurses_getkey (struct grub_term_input *term __attribute__ ((unused)))
     {
     case ERR:
       return GRUB_TERM_NO_KEY;
+
+#ifdef BHYVE
+    case KEY_F(1) ... KEY_F(10):
+      c = GRUB_TERM_KEY_F1 + (c - KEY_F(1));
+      break;
+
+      /* handle non-sequential f11/f12 */
+    case KEY_F(11) ... KEY_F(12):
+      c = GRUB_TERM_KEY_F11 + (c - KEY_F(11));
+      break;
+
+    case 0x01 ... 0x1A:
+      if (c != '\t' && c != '\b' && c != '\n' && c != '\r')
+	c = GRUB_TERM_CTRL | (c - 1 + 'a');
+      break;
+#endif
+      
     case KEY_LEFT:
       c = GRUB_TERM_KEY_LEFT;
       break;
