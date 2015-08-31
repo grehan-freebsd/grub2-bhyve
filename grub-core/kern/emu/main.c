@@ -227,6 +227,47 @@ static struct argp argp = {
   NULL, help_filter, NULL
 };
 
+#ifdef BHYVE
+/*
+ * Represent run-time conditional options as argp child options.
+ * The only one at this point is the "-S" option to force wiring
+ * of guest memory on >= 11.0-r284539.
+ */
+static struct argp_option bhyve_options[] = {
+  {0, 'S', 0, 0, N_("Force wiring of guest memory."), 0},
+  { 0, 0, 0, 0, 0, 0 }
+};
+
+static error_t
+bhyve_opt_parser (int key, char *arg, struct argp_state *state)
+{
+
+  switch (key)
+    {
+    case 'S':
+      grub_emu_bhyve_set_memwire();
+      break;
+    default:
+      return ARGP_ERR_UNKNOWN;
+    }
+  return 0;
+}
+
+static struct argp bhyve_opt_argp = {
+  bhyve_options,
+  bhyve_opt_parser
+};
+
+static struct argp_child bhyve_opt_child = {
+  &bhyve_opt_argp,
+  0,
+  "",
+  2
+};
+
+static struct argp_child bhyve_argp_children[2];
+#endif
+
 
 
 void grub_hostfs_init (void);
@@ -255,6 +296,12 @@ main (int argc, char *argv[])
 
 #ifdef BHYVE
   grub_cfg = xstrdup (DEFAULT_GRUB_CFG);
+
+  if (grub_emu_bhyve_memwire_avail()) {
+    bhyve_argp_children[0] = bhyve_opt_child;
+    bhyve_argp_children[1].argp = NULL;
+    argp.children = bhyve_argp_children;
+  }    
 #endif
 
   if (argp_parse (&argp, argc, argv, 0, 0, &arguments) != 0)

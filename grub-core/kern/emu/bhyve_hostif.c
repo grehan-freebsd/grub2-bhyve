@@ -46,6 +46,7 @@ static struct vmctx *bhyve_ctx;
 
 static int bhyve_cinsert = 1;
 static int bhyve_vgainsert = 1;
+static int bhyve_memwire = 0;
 
 #define BHYVE_MAXSEGS	5
 struct {
@@ -112,6 +113,13 @@ grub_emu_bhyve_init(const char *name, grub_uint64_t memsz)
       fprintf (stderr, "Could not enable unrestricted guest for VM\n");
       return GRUB_ERR_BUG;
     }
+
+#ifdef VM_MEM_F_WIRED
+  if (bhyve_memwire)
+    {
+      vm_set_memflags(bhyve_ctx, VM_MEM_F_WIRED);
+    }
+#endif
 
   err = vm_setup_memory (bhyve_ctx, memsz, VM_MMAP_ALL);
   if (err) {
@@ -402,4 +410,23 @@ int
 grub_emu_bhyve_vgainsert(void)
 {
   return bhyve_vgainsert;
+}
+
+int
+grub_emu_bhyve_memwire_avail(void)
+{
+
+#ifdef VM_MEM_F_WIRED
+  return (1);
+#else
+  return (0);
+#endif
+}
+
+void
+grub_emu_bhyve_set_memwire(void)
+{
+#ifdef VM_MEM_F_WIRED
+  bhyve_memwire = 1;
+#endif
 }

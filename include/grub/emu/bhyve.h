@@ -47,6 +47,8 @@ int  grub_emu_bhyve_parse_memsize(const char *arg, grub_uint64_t *size);
 void grub_emu_bhyve_set_console_dev(const char *dev);
 void grub_emu_bhyve_unset_cinsert(void);
 void grub_emu_bhyve_unset_vgainsert(void);
+int  grub_emu_bhyve_memwire_avail(void);
+void grub_emu_bhyve_set_memwire(void);
 int  EXPORT_FUNC(grub_emu_bhyve_cinsert) (void);
 int  EXPORT_FUNC(grub_emu_bhyve_vgainsert) (void);
 void EXPORT_FUNC(grub_emu_bhyve_boot32)(grub_uint32_t bootaddr, 

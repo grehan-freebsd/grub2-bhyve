@@ -39,6 +39,9 @@ The -M parameter specifies the amount of bhyve guest memory in MBytes.
 The -n parameter disables auto-insertion of "console=ttyS0" to the
  start of the Linux kernel command-line.
 
+The -S parameter forces wiring of guest memory on FreeBSD-11 hosts.
+This is required for PCI passthru.
+
 To boot a linux kernel, the 'linux' command is used to load the kernel
 and specify command-line options, while the 'initrd' command is used
 to load the initrd. The 'boot' command is then issued to finalize 
