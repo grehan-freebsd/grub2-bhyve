@@ -155,7 +155,7 @@ grub_emu_bhyve_init(const char *name, grub_uint64_t memsz)
   bhyve_info.segs = bhyve_mm;
 
   bhyve_mm[0].start = 0x0;
-  bhyve_mm[0].end = 640*1024 - 1;		/* 640K */
+  bhyve_mm[0].end = 640*1024;		/* 640K */
   bhyve_mm[0].type = GRUB_MEMORY_AVAILABLE;
 
   bhyve_mm[1].start = 1024*1024;
