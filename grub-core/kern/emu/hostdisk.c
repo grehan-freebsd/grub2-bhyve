@@ -120,6 +120,9 @@ static struct
   char *drive;
   char *device;
   int device_map;
+#ifdef BHYVE
+  int diskfd;
+#endif
 } map[256];
 
 struct grub_util_biosdisk_data
@@ -376,7 +379,11 @@ grub_util_biosdisk_open (const char *name, grub_disk_t disk)
   {
     int fd;
 
+#ifdef BHYVE
+    fd = dup(map[drive].diskfd);
+#else
     fd = open (map[drive].device, O_RDONLY);
+#endif
     if (fd == -1)
       return grub_error (GRUB_ERR_UNKNOWN_DEVICE, N_("cannot open `%s': %s"),
 			 map[drive].device, strerror (errno));
@@ -603,7 +610,11 @@ grub_hostdisk_find_partition_start (const char *dev)
     return partition_start;
 # endif /* HAVE_DEVICE_MAPPER */
 
+#ifdef BHYVE
+  fd = dup (map[drive].diskfd);
+#else
   fd = open (dev, O_RDONLY);
+#endif
   if (fd == -1)
     {
       grub_error (GRUB_ERR_BAD_DEVICE, N_("cannot open `%s': %s"),
@@ -989,7 +1000,11 @@ open_device (const grub_disk_t disk, grub_disk_addr_t sector, int flags,
 	    data->fd = -1;
 	}
 
+#ifdef BHYVE
+      fd = fcntl (map[disk->id].diskfd, F_DUPFD_CLOEXEC, 0);
+#else
       fd = open (map[disk->id].device, flags);
+#endif
       if (fd >= 0)
 	{
 	  data->dev = xstrdup (map[disk->id].device);
@@ -1325,15 +1340,36 @@ read_device_map (const char *dev_map)
 #ifdef __MINGW32__
       (void) st;
       if (grub_util_get_disk_size (p) == -1LL)
+#elif defined(BHYVE)
+      int diskfd;
+
+      /*
+       * Preopen disk fds to be able to access them later when we enter
+       * sandboxed mode.  Logically, the guest owns these files, so open them
+       * writable.  However, it is also possible that some RO install media is
+       * specified, so do not treat EACCES for O_RDWR as a fatal error and
+       * instead fall back to O_RDONLY.
+       */
+      diskfd = open(p, O_RDWR | O_CLOEXEC);
+      if (diskfd == -1 && errno == EACCES)
+	diskfd = open(p, O_RDONLY | O_CLOEXEC);
+      if (diskfd == -1 || fstat(diskfd, &st) == -1)
 #else
       if (stat (p, &st) == -1)
 #endif
 	{
+#ifdef BHYVE
+	  if (diskfd != -1)
+	    close (diskfd);
+#endif
 	  free (map[drive].drive);
 	  map[drive].drive = NULL;
 	  grub_util_info ("Cannot stat `%s', skipping", p);
 	  continue;
 	}
+#ifdef BHYVE
+      map[drive].diskfd = diskfd;
+#endif
 
 #ifdef __linux__
       /* On Linux, the devfs uses symbolic links horribly, and that
@@ -1392,7 +1428,12 @@ grub_util_biosdisk_fini (void)
       if (map[i].drive)
 	free (map[i].drive);
       if (map[i].device)
-	free (map[i].device);
+        {
+	  free (map[i].device);
+#ifdef BHYVE
+	  close (map[i].diskfd);
+#endif
+	}
       map[i].drive = map[i].device = NULL;
     }
 
