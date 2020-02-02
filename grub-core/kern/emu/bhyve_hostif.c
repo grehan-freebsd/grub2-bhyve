@@ -3,17 +3,21 @@
  * guest memory, populating guest register state etc
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <assert.h>
 #include <sys/types.h>
 #include <sys/errno.h>
 
 #include <x86/segments.h>
 #include <x86/specialreg.h>
 #include <machine/vmm.h>
+
+#include <assert.h>
+#include <err.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <unistd.h>
 
 #include <vmmapi.h>
 
@@ -173,6 +177,25 @@ grub_emu_bhyve_init(const char *name, grub_uint64_t memsz)
   bhyve_info.bootsz = sizeof(bhyve_gdt);
 
   return 0;
+}
+
+void
+grub_emu_bhyve_post_init(void)
+{
+  struct passwd *pwd;
+  int rc;
+
+  /* Drop unneeded root credentials once the VM is instantiated. */
+  pwd = getpwnam("nobody");
+  if (pwd == NULL)
+    err(1, "getpwnam(nobody)");
+
+  rc = setgid(pwd->pw_gid);
+  if (rc != 0)
+    err(1, "setgid(nobody)");
+  rc = setuid(pwd->pw_uid);
+  if (rc != 0)
+    err(1, "setuid(nobody)");
 }
 
 /*

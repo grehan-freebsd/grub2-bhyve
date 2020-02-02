@@ -353,6 +353,10 @@ main (int argc, char *argv[])
   grub_hostfs_init ();
 
   grub_emu_post_init ();
+#ifdef BHYVE
+  /* Drop privileges and sandbox. */
+  grub_emu_bhyve_post_init ();
+#endif
 
   /* Make sure that there is a root device.  */
   if (! root_dev)
