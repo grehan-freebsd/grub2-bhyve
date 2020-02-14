@@ -58,4 +58,6 @@ void EXPORT_FUNC(grub_emu_bhyve_boot64)(struct grub_relocator64_state rs);
 const struct grub_bhyve_info * EXPORT_FUNC(grub_emu_bhyve_info) (void);
 void * EXPORT_FUNC(grub_emu_bhyve_virt) (grub_uint64_t physaddr);
 
+grub_err_t grub_hostfs_cache_open(const char *name);
+
 #endif /* GRUB_EMU_BHYVE_H */

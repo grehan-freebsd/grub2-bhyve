@@ -27,6 +27,10 @@
 #include <grub/emu/hostdisk.h>
 #include <grub/i18n.h>
 
+#if 1 /* BHYVE */
+#include <grub/emu/bhyve.h>
+#include <fcntl.h>
+#endif
 #include <dirent.h>
 #include <stdio.h>
 #include <errno.h>
@@ -100,18 +104,81 @@ grub_hostfs_dir (grub_device_t device, const char *path,
   return GRUB_ERR_NONE;
 }
 
+#if 1 /* BHYVE */
+static grub_size_t hostfs_n_cached;
+static struct hostfs_preopen_cache {
+  const char *cached_path;
+  int cached_fd;
+} *hostfs_preopen_cache;
+
+static int
+grub_hostfs_cache_find (const char *name)
+{
+  struct hostfs_preopen_cache *iter;
+  iter = hostfs_preopen_cache;
+  for (grub_size_t i = 0; i < hostfs_n_cached; i++, iter++) {
+    if (strcmp(iter->cached_path, name) == 0)
+      return (iter->cached_fd);
+  }
+  return (-1);
+}
+
+grub_err_t
+grub_hostfs_cache_open (const char *name)
+{
+  grub_size_t idx;
+  int fd;
+
+  if (grub_hostfs_cache_find (name) >= 0)
+    return (0);
+
+  fd = open(name, O_RDONLY | O_CLOEXEC);
+  if (fd == -1) {
+    switch (errno) {
+    case ENOENT:
+    case ENOTDIR:
+      return (GRUB_ERR_FILE_NOT_FOUND);
+    default:
+      return (GRUB_ERR_BAD_FILENAME);
+    }
+  }
+
+  idx = hostfs_n_cached;
+  hostfs_n_cached++;
+
+  hostfs_preopen_cache = realloc(hostfs_preopen_cache,
+    hostfs_n_cached * sizeof(*hostfs_preopen_cache));
+  hostfs_preopen_cache[idx].cached_fd = fd;
+  hostfs_preopen_cache[idx].cached_path = xstrdup (name);
+  return (0);
+}
+#endif
+
 /* Open a file named NAME and initialize FILE.  */
 static grub_err_t
 grub_hostfs_open (struct grub_file *file, const char *name)
 {
   FILE *f;
   struct grub_hostfs_data *data;
+#if 1 /* BHYVE */
+  int fd;
 
-  f = fopen (name, "rb");
+  fd = grub_hostfs_cache_find (name);
+  if (fd >= 0)
+      fd = fcntl (fd, F_DUPFD_CLOEXEC, 0);
+  if (fd >= 0)
+      f = fdopen (fd, "rb");
+  else
+      f = fopen (name, "rb");
   if (! f)
-    return grub_error (GRUB_ERR_BAD_FILENAME,
-		       N_("can't open `%s': %s"), name,
-		       strerror (errno));
+    {
+      if (fd >= 0)
+	close (fd);
+      return grub_error (GRUB_ERR_BAD_FILENAME,
+			 N_("can't open `%s': %s"), name,
+			 strerror (errno));
+    }
+#endif
   data = grub_malloc (sizeof (*data));
   if (!data)
     {

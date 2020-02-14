@@ -353,16 +353,36 @@ main (int argc, char *argv[])
   grub_hostfs_init ();
 
   grub_emu_post_init ();
-#ifdef BHYVE
-  /* Drop privileges and sandbox. */
-  grub_emu_bhyve_post_init ();
-#endif
 
   /* Make sure that there is a root device.  */
   if (! root_dev)
     root_dev = grub_strdup ("host");
 
   dir = xstrdup (dir);
+
+#ifdef BHYVE
+  /*
+   * For the relatively common case of grub.cfg somewhere on the hostfs,
+   * preopen it before dropping credentials and sandboxing.  It may well be in
+   * a directory we no longer have access to.
+   */
+  if (strcmp(root_dev, "host") == 0) {
+    char *path;
+    grub_err_t errr;
+
+    path = grub_xasprintf ("%s/%s", dir, grub_cfg);
+    errr = grub_hostfs_cache_open (path);
+    grub_free (path);
+
+    if (errr != 0 && errr != GRUB_ERR_FILE_NOT_FOUND) {
+      printf ("Error preopening '%s/%s': %d\n", dir, grub_cfg, (int)errr);
+      exit (1);
+    }
+  }
+
+  /* Drop privileges and sandbox. */
+  grub_emu_bhyve_post_init ();
+#endif
 
   /* Start GRUB!  */
   if (setjmp (main_env) == 0)
