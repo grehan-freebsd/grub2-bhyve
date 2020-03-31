@@ -275,6 +275,12 @@ grub_ncurses_init (struct grub_term_output *term __attribute__ ((unused)))
   FILE *fin, *fout;
   int fd, rc;
 
+  term_type = "vt102";
+  if (getenv ("TERM") == NULL)
+    setenv ("TERM", term_type, 0);
+  else
+    term_type = getenv ("TERM");
+
   if (g_cdev != NULL) {
     /* Open user-supplied console device. */
     fd = open (g_cdev, O_RDWR | O_NONBLOCK);
@@ -293,10 +299,6 @@ grub_ncurses_init (struct grub_term_output *term __attribute__ ((unused)))
     fout = fdopen (fd, "w");
     if (fin == NULL || fout == NULL)
       return (GRUB_ERR_OUT_OF_MEMORY);
-
-    term_type = "vt102";
-    if (getenv ("TERM") != NULL)
-      term_type = getenv ("TERM");
 
     g_term = newterm (term_type, fout, fin);
     if (g_term == NULL)
