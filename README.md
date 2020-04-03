@@ -2,17 +2,17 @@ grub2-bhyve
 ===========
 
 The following packages are required to build:
-* gcc (installs gcc48)
+* gcc
 * flex
 * bison
 * gmake
 
 Optionally:
-* gdb78 (for debugging)
+* gdb (for debugging)
 
 The configure command line is:
 
-    ./configure --with-platform=emu CC=gcc48 LEX=/usr/local/bin/flex \
+    ./configure --with-platform=emu CC=gcc LEX=/usr/local/bin/flex \
         --enable-grub-mount=no --enable-grub-mkfont=no \
 	--enable-grub-emu-sdl=no --disable-nls --disable-werror
 
