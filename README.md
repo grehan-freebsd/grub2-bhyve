@@ -33,6 +33,10 @@ allows the host filesystem to be accessed.
 
 The -r parameter takes a device name from the device.map file which
 will be used as the device for pathnames without a device specifier.
+Optionally a partition can also be specified, separated by a comma,
+like "hd0,msdos1".
+If a grub.cfg file is found on the specified partition it will be
+loaded automatically.
 
 The -M parameter specifies the amount of bhyve guest memory in MBytes.
 
@@ -49,6 +53,12 @@ loading, set bhyve register state, and exit grub-emu.
 grub-emu will auto-insert a "console=ttyS0" line if there isn't one
 present in the command line. This can be disabled by passing the
 '-n' option to grub-emu.
+If the kernel is loaded from an ext2/3/4 partittion on disk and not iso,
+you will need to load the "ext2" module using the "insmod ext2" command.
+If you have a working grub.cfg on disk, avoid needing to issue commands
+at the grub prompt by specifying the relevant partition and root device
+when envoking grub-emu.
+
 
     linux  /isolinux/vmlinuz text earlyprintk=serial debug
     initrd /isolinux/initrd.img
