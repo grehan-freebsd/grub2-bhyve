@@ -47,6 +47,11 @@ static uint16_t bhyve_gdt[] = {
 };
 
 static struct vmctx *bhyve_ctx;
+#if VMMAPI_VERSION >= 0200
+static struct vcpu *bhyve_vcpu;
+#else
+#define	bhyve_vcpu	bhyve_ctx, 0
+#endif
 
 static int bhyve_cinsert = 1;
 static int bhyve_vgainsert = 1;
@@ -103,15 +108,19 @@ grub_emu_bhyve_init(const char *name, grub_uint64_t memsz)
     }
 #endif
 
+#if VMMAPI_VERSION >= 0200
+  bhyve_vcpu = vm_vcpu_open(bhyve_ctx, 0);
+#endif
+
   val = 0;
-  err = vm_get_capability (bhyve_ctx, 0, VM_CAP_UNRESTRICTED_GUEST, &val);
+  err = vm_get_capability (bhyve_vcpu, VM_CAP_UNRESTRICTED_GUEST, &val);
   if (err != 0)
     {
       fprintf (stderr, "VM unrestricted guest capability required\n");
       return GRUB_ERR_BAD_DEVICE;
     }
 
-  err = vm_set_capability (bhyve_ctx, 0, VM_CAP_UNRESTRICTED_GUEST, 1);
+  err = vm_set_capability (bhyve_vcpu, VM_CAP_UNRESTRICTED_GUEST, 1);
   if (err != 0)
     {
       fprintf (stderr, "Could not enable unrestricted guest for VM\n");
@@ -215,16 +224,16 @@ grub_emu_bhyve_boot32(grub_uint32_t bt, struct grub_relocator32_state rs)
    * disabled;"
    */
   cr0 = CR0_PE;
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_CR0, cr0) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_CR0, cr0) == 0);
 
   cr4 = 0;
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_CR4, cr4) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_CR4, cr4) == 0);
 
   /*
    * Reserved bit 1 set to 1. "interrupt must be disabled"
    */
   rflags = 0x2;
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RFLAGS, rflags) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RFLAGS, rflags) == 0);
 
   /*
    * "__BOOT_CS(0x10) and __BOOT_DS(0x18); both descriptors must be 4G
@@ -234,23 +243,23 @@ grub_emu_bhyve_boot32(grub_uint32_t bt, struct grub_relocator32_state rs)
   desc_base = 0;
   desc_limit = 0xffffffff;
   desc_access = 0x0000C09B;
-  assert(vm_set_desc(bhyve_ctx, 0, VM_REG_GUEST_CS,
+  assert(vm_set_desc(bhyve_vcpu, VM_REG_GUEST_CS,
 		     desc_base, desc_limit, desc_access) == 0);
 
   desc_access = 0x0000C093;
-  assert(vm_set_desc(bhyve_ctx, 0, VM_REG_GUEST_DS,
+  assert(vm_set_desc(bhyve_vcpu, VM_REG_GUEST_DS,
 		     desc_base, desc_limit, desc_access) == 0);
 
   /*
    * ... "and DS, ES, SS must be __BOOT_DS;"
    */
-  assert(vm_set_desc(bhyve_ctx, 0, VM_REG_GUEST_ES,
+  assert(vm_set_desc(bhyve_vcpu, VM_REG_GUEST_ES,
 		     desc_base, desc_limit, desc_access) == 0);
-  assert(vm_set_desc(bhyve_ctx, 0, VM_REG_GUEST_FS,
+  assert(vm_set_desc(bhyve_vcpu, VM_REG_GUEST_FS,
 		     desc_base, desc_limit, desc_access) == 0);
-  assert(vm_set_desc(bhyve_ctx, 0, VM_REG_GUEST_GS,
+  assert(vm_set_desc(bhyve_vcpu, VM_REG_GUEST_GS,
 		     desc_base, desc_limit, desc_access) == 0);
-  assert(vm_set_desc(bhyve_ctx, 0, VM_REG_GUEST_SS,
+  assert(vm_set_desc(bhyve_vcpu, VM_REG_GUEST_SS,
 		     desc_base, desc_limit, desc_access) == 0);
 
   /*
@@ -259,35 +268,35 @@ grub_emu_bhyve_boot32(grub_uint32_t bt, struct grub_relocator32_state rs)
    * Has to be 8b or vmenter will fail
    */
   desc_access = 0x0000008b;
-  assert(vm_set_desc(bhyve_ctx, 0, VM_REG_GUEST_TR, 0x1000, 0x67,
+  assert(vm_set_desc(bhyve_vcpu, VM_REG_GUEST_TR, 0x1000, 0x67,
 		     desc_access) == 0);
 
-  assert(vm_set_desc(bhyve_ctx, 0, VM_REG_GUEST_LDTR, 0, 0xffff,
+  assert(vm_set_desc(bhyve_vcpu, VM_REG_GUEST_LDTR, 0, 0xffff,
 		     DESC_UNUSABLE | 0x82) == 0);
 
   gsel = GSEL(GUEST_CODE_SEL, SEL_KPL);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_CS, gsel) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_CS, gsel) == 0);
 
   gsel = GSEL(GUEST_DATA_SEL, SEL_KPL);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_DS, gsel) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_ES, gsel) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_FS, gsel) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_GS, gsel) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_SS, gsel) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_DS, gsel) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_ES, gsel) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_FS, gsel) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_GS, gsel) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_SS, gsel) == 0);
 
   /* XXX TR is pointing to selector 1 */
   gsel = GSEL(GUEST_TSS_SEL, SEL_KPL);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_TR, gsel) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_TR, gsel) == 0);
 
   /* LDTR is pointing to the null selector */
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_LDTR, 0) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_LDTR, 0) == 0);
 
   /*
    * "In 32-bit boot protocol, the kernel is started by jumping to the
    * 32-bit kernel entry point, which is the start address of loaded
    * 32/64-bit kernel."
    */
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RIP, rs.eip) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RIP, rs.eip) == 0);
 
   /*
    * Set up the GDT by copying it into low memory, and then pointing
@@ -296,37 +305,37 @@ grub_emu_bhyve_boot32(grub_uint32_t bt, struct grub_relocator32_state rs)
   memcpy(grub_emu_bhyve_virt(bt), bhyve_gdt, sizeof(bhyve_gdt));
   desc_base = bt;
   desc_limit = GUEST_GDTR_LIMIT;
-  assert(vm_set_desc(bhyve_ctx, 0, VM_REG_GUEST_GDTR, desc_base,
+  assert(vm_set_desc(bhyve_vcpu, VM_REG_GUEST_GDTR, desc_base,
     desc_limit, 0) == 0);;
   
   /*
    * Set the stack to be just below the params real-mode area
    */
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RSP, rs.esp) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RSP, rs.esp) == 0);
 
   /*
    * "%esi must hold the base address of the struct boot_params"
    */
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RSI, rs.esi) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RSI, rs.esi) == 0);
 
   /*
    * "%ebp, %edi and %ebx must be zero."
    * Assume that grub set these up correctly - might be different for
    * *BSD. While at it, init the remaining passed-in register state.
    */
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RBP, rs.ebp) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RDI, rs.edi) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RBX, rs.ebx) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RBP, rs.ebp) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RDI, rs.edi) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RBX, rs.ebx) == 0);
 
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RAX, rs.eax) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RCX, rs.ecx) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RDX, rs.edx) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RAX, rs.eax) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RCX, rs.ecx) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RDX, rs.edx) == 0);
 
   /*
    * XXX debug: turn on tracing
    */
 #if 0
-  assert(vm_set_capability(bhyve_ctx, 0, VM_CAP_MTRAP_EXIT, 1) == 0);
+  assert(vm_set_capability(bhyve_vcpu, VM_CAP_MTRAP_EXIT, 1) == 0);
 #endif
 
   /*
@@ -361,16 +370,16 @@ grub_emu_bhyve_boot64(struct grub_relocator64_state rs)
   /*
    * Use the library API to set up a FreeBSD entry reg state
    */
-  error = vm_setup_freebsd_registers(bhyve_ctx, 0, rs.rip, rs.cr3, 
+  error = vm_setup_freebsd_registers(bhyve_vcpu, rs.rip, rs.cr3, 
 				     gdt64_addr, rs.rsp);
   assert(error == 0);
 
   /* Set up the remaining regs */
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RAX, rs.rax) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RBX, rs.rbx) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RCX, rs.rcx) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RDX, rs.rdx) == 0);
-  assert(vm_set_register(bhyve_ctx, 0, VM_REG_GUEST_RSI, rs.rsi) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RAX, rs.rax) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RBX, rs.rbx) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RCX, rs.rcx) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RDX, rs.rdx) == 0);
+  assert(vm_set_register(bhyve_vcpu, VM_REG_GUEST_RSI, rs.rsi) == 0);
 
   /*
    * Exit cleanly, using the conditional test to avoid the noreturn
