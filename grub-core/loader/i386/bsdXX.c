@@ -521,16 +521,66 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
 				   struct grub_openbsd_ramdisk_descriptor *desc)
 {
   unsigned symoff, stroff, symsize, strsize, symentsize;
+  Elf_Shdr *rodata;
 
   {
     grub_err_t err;
     Elf_Ehdr e;
-    Elf_Shdr *s;
-    char *shdr = NULL;
+    Elf_Shdr *s, *d, *strtab;
+    char *strarr, *shdr = NULL;
     
     err = read_headers (file, filename, &e, &shdr);
     if (err)
       return err;
+
+    for (s = (Elf_Shdr *) shdr;
+	 s < (Elf_Shdr *) (shdr + e.e_shnum * e.e_shentsize);
+	 s = (Elf_Shdr *) ((char *) s + e.e_shentsize))
+      if (s->sh_type == SHT_STRTAB)
+	break;
+    if (s >= (Elf_Shdr *) ((char *) shdr + e.e_shnum * e.e_shentsize))
+      {
+	grub_free (shdr);
+	return GRUB_ERR_NONE;
+      }
+    strtab = s;
+
+    strarr = grub_malloc (strtab->sh_size);
+    if (!strarr)
+      {
+	grub_free (shdr);
+        return grub_errno;
+      }
+
+    if (grub_file_seek (file, strtab->sh_offset) == (grub_off_t) -1)
+      {
+	grub_free (strarr);
+	grub_free (shdr);
+	return grub_errno;
+      }
+    if (grub_file_read (file, strarr, strtab->sh_size) != (grub_ssize_t) strtab->sh_size)
+      {
+        grub_free (strarr);
+        grub_free (shdr);
+        if (! grub_errno)
+          return grub_error (GRUB_ERR_BAD_OS, N_("premature end of file %s"),
+			     filename);
+        return grub_errno;
+      }
+
+    for (s = (Elf_Shdr *) shdr;
+	 s < (Elf_Shdr *) (shdr + e.e_shnum * e.e_shentsize);
+	 s = (Elf_Shdr *) ((char *) s + e.e_shentsize))
+      if (s->sh_type == SHT_PROGBITS &&
+	  grub_strcmp(&strarr[s->sh_name], ".rodata") == 0)
+	break;
+    grub_free (strarr);
+    if (s >= (Elf_Shdr *) ((char *) shdr + e.e_shnum * e.e_shentsize))
+      {
+	grub_free (shdr);
+	return GRUB_ERR_NONE;
+      }
+    rodata = s;
 
     for (s = (Elf_Shdr *) shdr; s < (Elf_Shdr *) (shdr
 						  + e.e_shnum * e.e_shentsize);
@@ -553,7 +603,7 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
     grub_free (shdr);
   }
   {
-    Elf_Sym *syms, *sym, *imagesym = NULL, *sizesym = NULL;
+    Elf_Sym *syms, *sym, *imagesym = NULL, *sizesym = NULL, *osrelsym = NULL;
     unsigned i;
     char *strs;
 
@@ -605,9 +655,45 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
 	  imagesym = sym;
 	if (grub_strcmp (strs + sym->st_name, "rd_root_size") == 0)
 	  sizesym = sym;
-	if (imagesym && sizesym)
+	if (grub_strcmp (strs + sym->st_name, "osrelease") == 0)
+	  osrelsym = sym;
+	if (imagesym && sizesym && osrelsym)
 	  break;
       }
+    if (osrelsym) {
+      char *p;
+      int major, minor;
+      grub_size_t sz;
+      char osrel[16];
+      stroff = ((osrelsym->st_value - rodata->sh_addr) + rodata->sh_offset);
+      if (grub_file_seek (file, stroff) == (grub_off_t) -1) {
+	grub_free (syms);
+	grub_free (strs);
+        return grub_errno;
+      }
+      sz = sizeof(osrel) < osrelsym->st_size ? sizeof(osrel) : osrelsym->st_size;
+      if (grub_file_read (file, osrel, sz) != (grub_ssize_t) sz) {
+	grub_free (syms);
+	grub_free (strs);
+        return grub_errno;
+      }
+      osrel[sz - 1] = '\0';
+      major = minor = 0;
+      for (p = osrel; *p != '\0'; p++)
+        if (*p >= '0' && *p <= '9')
+          major = major * 10 + *p - '0';
+        else
+          break;
+      if (*p == '.')
+        p++;
+      for (; *p != '\0'; p++)
+        if (*p >= '0' && *p <= '9')
+           minor = minor * 10 + *p - '0';
+        else
+          break;
+      desc->osrelease = major * 1000 + minor;
+    }
+
     if (!imagesym || !sizesym)
       {
 	grub_free (syms);

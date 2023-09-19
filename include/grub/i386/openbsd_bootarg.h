@@ -63,6 +63,7 @@
 #define	OPENBSD_BOOTARG_MMAP	0
 #define	OPENBSD_BOOTARG_PCIBIOS 4
 #define	OPENBSD_BOOTARG_CONSOLE 5
+#define	OPENBSD_BOOTARG_CONSOLE_LEGACY 6
 
 struct grub_openbsd_bootargs
 {
@@ -71,12 +72,23 @@ struct grub_openbsd_bootargs
   grub_uint32_t ba_next;
 } __attribute__ ((packed));
 
-struct grub_openbsd_bootarg_console
+struct grub_openbsd_bootarg_console_legacy
 {
   grub_uint32_t device;
   grub_uint32_t speed;
   grub_int32_t  addr;
   grub_uint32_t freq;
+};
+
+struct grub_openbsd_bootarg_console
+{
+  grub_uint32_t device;
+  grub_uint32_t speed;
+  grub_uint64_t addr;
+  grub_int32_t  freq;
+  grub_uint32_t flags;
+  grub_int32_t  reg_width;
+  grub_int32_t  reg_shift;
 };
 
 struct grub_openbsd_bootarg_pcibios
