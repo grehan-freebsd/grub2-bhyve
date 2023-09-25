@@ -522,12 +522,13 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
 {
   unsigned symoff, stroff, symsize, strsize, symentsize;
   Elf_Shdr *rodata;
+  char *shdr = NULL;
 
   {
     grub_err_t err;
     Elf_Ehdr e;
-    Elf_Shdr *s, *d, *strtab;
-    char *strarr, *shdr = NULL;
+    Elf_Shdr *s, *strtab;
+    char *strarr;
     
     err = read_headers (file, filename, &e, &shdr);
     if (err)
@@ -600,7 +601,6 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
     s = (Elf_Shdr *) (shdr + e.e_shentsize * s->sh_link);
     stroff = s->sh_offset;
     strsize = s->sh_size;
-    grub_free (shdr);
   }
   {
     Elf_Sym *syms, *sym, *imagesym = NULL, *sizesym = NULL, *osrelsym = NULL;
@@ -608,16 +608,19 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
     char *strs;
 
     syms = grub_malloc (symsize);
-    if (!syms)
+    if (!syms) {
+      grub_free (shdr);
       return grub_errno;
-
+    }
     if (grub_file_seek (file, symoff) == (grub_off_t) -1)
       {
+        grub_free (shdr);
 	grub_free (syms);
 	return grub_errno;
       }
     if (grub_file_read (file, syms, symsize) != (grub_ssize_t) symsize)
       {
+        grub_free (shdr);
 	grub_free (syms);
 	if (! grub_errno)
 	  return grub_error (GRUB_ERR_BAD_OS, N_("premature end of file %s"),
@@ -628,6 +631,7 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
     strs = grub_malloc (strsize);
     if (!strs)
       {
+	grub_free (shdr);
 	grub_free (syms);
 	return grub_errno;
       }
@@ -636,6 +640,7 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
       return grub_errno;
     if (grub_file_read (file, strs, strsize) != (grub_ssize_t) strsize)
       {
+	grub_free (shdr);
 	grub_free (syms);
 	grub_free (strs);
 	if (! grub_errno)
@@ -667,12 +672,14 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
       char osrel[16];
       stroff = ((osrelsym->st_value - rodata->sh_addr) + rodata->sh_offset);
       if (grub_file_seek (file, stroff) == (grub_off_t) -1) {
+        grub_free (shdr);
 	grub_free (syms);
 	grub_free (strs);
         return grub_errno;
       }
       sz = sizeof(osrel) < osrelsym->st_size ? sizeof(osrel) : osrelsym->st_size;
       if (grub_file_read (file, osrel, sz) != (grub_ssize_t) sz) {
+        grub_free (shdr);
 	grub_free (syms);
 	grub_free (strs);
         return grub_errno;
@@ -692,6 +699,7 @@ SUFFIX(grub_openbsd_find_ramdisk) (grub_file_t file,
         else
           break;
       desc->osrelease = major * 1000 + minor;
+      grub_free (shdr);
     }
 
     if (!imagesym || !sizesym)
