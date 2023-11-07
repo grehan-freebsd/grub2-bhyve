@@ -812,12 +812,25 @@ grub_openbsd_boot (void)
   grub_addr_t buf_target;
   grub_err_t err;
   grub_size_t tag_buf_len;
-  grub_uint32_t deltype;
 
-  deltype = (openbsd_ramdisk.osrelease >= 7003) || (openbsd_ramdisk.osrelease == 0) ? OPENBSD_BOOTARG_CONSOLE_LEGACY : OPENBSD_BOOTARG_CONSOLE;
-
-  if (openbsd_force_legacy_console)
-	  deltype = OPENBSD_BOOTARG_CONSOLE;
+  if (openbsd_force_legacy_console || ! is_64bit ||
+      (openbsd_ramdisk.osrelease < 7003 && openbsd_ramdisk.osrelease > 0))
+    {
+      struct bsd_tag *tag;
+      for (tag = tags; tag; tag = tag->next)
+	if (tag->type == OPENBSD_BOOTARG_CONSOLE)
+	  {
+	    struct grub_openbsd_bootarg_console *s =
+	      (struct grub_openbsd_bootarg_console *) tag -> data;
+	    struct grub_openbsd_bootarg_console_legacy l_serial;
+	    grub_memset (&l_serial, 0, sizeof (l_serial));
+	    l_serial.device = s -> device;
+	    l_serial.speed = s -> speed;
+	    l_serial.addr = -1;
+	    grub_memcpy(tag -> data, &l_serial, sizeof(l_serial));
+	    tag -> len = sizeof(l_serial);
+	  }
+    }
 
   err = grub_bsd_add_mmap ();
   if (err)
@@ -856,7 +869,6 @@ grub_openbsd_boot (void)
     struct bsd_tag *tag;
     tag_buf_len = 0;
     for (tag = tags; tag; tag = tag->next)
-      if (tag->type != deltype)
       tag_buf_len = ALIGN_VAR (tag_buf_len
 			       + sizeof (struct grub_openbsd_bootargs)
 			       + tag->len);
@@ -883,10 +895,8 @@ grub_openbsd_boot (void)
 
     for (tag = tags; tag; tag = tag->next)
       {
-        if (tag->type == deltype)
-		continue;
 	head = curarg;
-	head->ba_type = (tag->type == OPENBSD_BOOTARG_CONSOLE_LEGACY) ? OPENBSD_BOOTARG_CONSOLE : tag->type;
+	head->ba_type = tag->type;
 	head->ba_size = tag->len + sizeof (*head);
 	curarg = head + 1;
 	grub_memcpy (curarg, tag->data, tag->len);
@@ -1656,17 +1666,16 @@ grub_cmd_openbsd (grub_extcmd_context_t ctxt, int argc, char *argv[])
     bootdev = 0;
 
   openbsd_force_legacy_console = bootflags & OPENBSD_RB_LEGACY;
+  bootflags &= ~OPENBSD_RB_LEGACY;
 
   if (ctxt->state[OPENBSD_SERIAL_ARG].set)
     {
-      struct grub_openbsd_bootarg_console_legacy l_serial;
       struct grub_openbsd_bootarg_console serial;
       char *ptr;
       unsigned port = 0;
       unsigned speed = 9600;
 
       grub_memset (&serial, 0, sizeof (serial));
-      grub_memset (&l_serial, 0, sizeof (l_serial));
 
       if (ctxt->state[OPENBSD_SERIAL_ARG].arg)
 	{
@@ -1694,28 +1703,16 @@ grub_cmd_openbsd (grub_extcmd_context_t ctxt, int argc, char *argv[])
       serial.freq = 0;
 	  
       grub_bsd_add_meta (OPENBSD_BOOTARG_CONSOLE, &serial, sizeof (serial));
-
-      l_serial.device = (GRUB_OPENBSD_COM_MAJOR << 8) | port;
-      l_serial.speed = speed;
-      l_serial.addr = -1;
-      l_serial.freq = 0;
-
-      grub_bsd_add_meta (OPENBSD_BOOTARG_CONSOLE_LEGACY, &l_serial, sizeof (l_serial));
       bootflags |= OPENBSD_RB_SERCONS;
     }
   else
     {
-      struct grub_openbsd_bootarg_console_legacy l_serial;
       struct grub_openbsd_bootarg_console serial;
 
       grub_memset (&serial, 0, sizeof (serial));
-      grub_memset (&l_serial, 0, sizeof (l_serial));
 
       serial.device = (GRUB_OPENBSD_VGA_MAJOR << 8);
       grub_bsd_add_meta (OPENBSD_BOOTARG_CONSOLE, &serial, sizeof (serial));
-
-      l_serial.device = (GRUB_OPENBSD_VGA_MAJOR << 8);
-      grub_bsd_add_meta (OPENBSD_BOOTARG_CONSOLE_LEGACY, &l_serial, sizeof (l_serial));
       bootflags &= ~OPENBSD_RB_SERCONS;
     }
 
