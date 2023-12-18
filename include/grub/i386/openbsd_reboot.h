@@ -68,6 +68,7 @@
 #define OPENBSD_RB_POWERDOWN	(1 << 12) /* attempt to power down machine */
 #define OPENBSD_RB_SERCONS	(1 << 13) /* use serial console if available */
 #define OPENBSD_RB_USERREQ	(1 << 14) /* boot() called at user request (e.g. ddb) */
+#define OPENBSD_RB_LEGACY	(1 << 31) /* Use legacy serial console structure */
 
 #define OPENBSD_B_DEVMAGIC	0xa0000000
 #define OPENBSD_B_ADAPTORSHIFT	24

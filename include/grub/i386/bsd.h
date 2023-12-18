@@ -108,6 +108,7 @@ struct grub_openbsd_ramdisk_descriptor
   grub_size_t max_size;
   grub_uint8_t *target;
   grub_uint32_t *size;
+  grub_uint32_t osrelease;
 };
 
 grub_err_t grub_openbsd_find_ramdisk32 (grub_file_t file,
